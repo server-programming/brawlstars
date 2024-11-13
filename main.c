@@ -4,8 +4,43 @@
 #include "start_menu.h"
 #include "help.h"
 #include "game.h"
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#define PORTNUM 9001
 
 int main() {
+
+	struct sockaddr_in sin;
+	int sd;
+	char buf[256];
+
+	memset((char *)&sin, '\0', sizeof(sin));
+	sin.sin_family = AF_INET;
+	sin.sin_port = htons(PORTNUM);
+	sin.sin_addr.s_addr = inet_addr("172.27.65.89");
+
+	if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+		perror("socket");
+		exit(1);
+	}
+
+	if (connect(sd, (struct sockaddr *)&sin, sizeof(sin))) {
+		perror("connect");
+		exit(1);
+	}
+
+	if (recv(sd, buf, sizeof(buf), 0) == -1) {
+		perror("recv");
+		exit(1);
+	}
+
+	printf("server connect!\n");
+
 	int selected_mode = 0;
 	basic_setting();
 	
@@ -20,5 +55,8 @@ int main() {
 		}
 	}
 	endwin(); // ncurses 종료
+	
+	close(sd);
+
 	return 0;
 }
