@@ -10,6 +10,10 @@ typedef struct {
 	int direction; // 0: 위, 1: 오른쪽, 2: 아래, 3: 왼쪽
 } Bullet;
 
+typedef struct {
+	int x, y;
+} player_loc;
+
 #define MAX_BULLETS 999
 Bullet bullets[MAX_BULLETS]; // 최대 999개의 총알
 int shot_count = 0; // 발사된 총알 수
@@ -19,7 +23,7 @@ void init_game(int sd) {
 	int y = LINES / 2;
 	int ch;
 	int player_dir = 0;
-	char buf[256];
+	player_loc *pl = (player_loc *)malloc(sizeof(player_loc));
 
 	while(1) {
 		clear(); // 화면 지우기
@@ -33,8 +37,9 @@ void init_game(int sd) {
 		
 		// 플레이어 이동 처리
 		if (move_player(&x, &y, ch, &player_dir)) {
-			sprintf(buf, "player is moving");
-			if (send(sd, buf, sizeof(buf), 0) == -1) {
+			pl->x = x;
+			pl->y = y;
+			if (send(sd, pl, sizeof(player_loc), 0) == -1) {
 				perror("player send");
 				exit(1);
 			}
