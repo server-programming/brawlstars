@@ -11,7 +11,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define PORTNUM 9001
+#define PORTNUM 23042
 
 int main() {
 	int client_num;
@@ -22,7 +22,7 @@ int main() {
 	memset((char *)&sin, '\0', sizeof(sin));
 	sin.sin_family = AF_INET;
 	sin.sin_port = htons(PORTNUM);
-	sin.sin_addr.s_addr = inet_addr("172.27.65.48");
+	sin.sin_addr.s_addr = inet_addr("172.17.14.162");
 
 	if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		perror("socket");

@@ -2,7 +2,7 @@
 #include "game.h"
 
 // 플레이어 초기 위치
-#define PLAYER_CHAR 'O'
+#define PLAYER_CHAR '🚖'
 
 // 총알 구조체
 typedef struct {
