@@ -7,18 +7,19 @@
 // 총알 구조체
 typedef struct {
 	int x, y;
-	int direction // 0: 위, 1: 오른쪽, 2: 아래, 3: 왼쪽
+	int direction; // 0: 위, 1: 오른쪽, 2: 아래, 3: 왼쪽
 } Bullet;
 
 #define MAX_BULLETS 999
 Bullet bullets[MAX_BULLETS]; // 최대 999개의 총알
 int shot_count = 0; // 발사된 총알 수
 
-void init_game() {
+void init_game(int sd) {
 	int x = COLS / 2;
 	int y = LINES / 2;
 	int ch;
 	int player_dir = 0;
+	char buf[256];
 
 	while(1) {
 		clear(); // 화면 지우기
@@ -31,7 +32,13 @@ void init_game() {
 		ch = getch(); // 사용자 입력 받기
 		
 		// 플레이어 이동 처리
-		move_player(&x, &y, ch, &player_dir);
+		if (move_player(&x, &y, ch, &player_dir)) {
+			sprintf(buf, "player is moving");
+			if (send(sd, buf, sizeof(buf), 0) == -1) {
+				perror("player send");
+				exit(1);
+			}
+		}
 
 		// 총알 발사 처리
 		if (ch == '\n') {
@@ -52,11 +59,13 @@ void draw_player(int x, int y) {
 }
 
 // 플레이어 이동
-void move_player(int* x, int* y, int ch, int* direction) {
+int move_player(int* x, int* y, int ch, int* direction) {
 	if (ch == 'w') (*y)--, *direction = 0; // 위로
 	if (ch == 's') (*y)++, *direction = 2; // 아래로
 	if (ch == 'a') (*x)--, *direction = 3; // 왼쪽으로
 	if (ch == 'd') (*x)++, *direction = 1; // 오른쪽으로
+	
+	return 1;
 }
 
 // 총알 발사

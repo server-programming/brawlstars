@@ -1,5 +1,10 @@
 #ifndef GAME_H
 #define GAME_H
+#include <netdb.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 // 게임 초기화 함수
 void init_game(); 
@@ -8,7 +13,7 @@ void init_game();
 void draw_player(int x, int y);
 
 // 플레이어 이동 함수
-void move_player(int* x, int* y, int ch, int* direction);
+int move_player(int* x, int* y, int ch, int* direction);
 
 // 총알 발사 함수
 void shoot_bullet(int x, int y, int direction);
