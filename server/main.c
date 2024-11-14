@@ -42,7 +42,7 @@ void *threadfunc(void *vargp) {
 
 	while(1) {
 		memset(buf, '\0', sizeof(buf));
-		network_status = recv(*(np->ns), cur_player, sizeof(player), 0);
+		network_status = recv(*(np->ns), buf, sizeof(buf), 0);
 
 		if (network_status == -1) {
 			perror("recv");
@@ -51,10 +51,9 @@ void *threadfunc(void *vargp) {
 		} else if (network_status == 0) {
 			printf("** From Client %d : Client is offline\n", cur_client_num);
 			break;
-		} else {
+		} else if (network_status > 0) {
 
-			np->players[cur_client_num].x = cur_player->x;
-			np->players[cur_client_num].y = cur_player->y;
+			sscanf(buf, "%d,%d", &np->players[cur_client_num].x, &np->players[cur_client_num].y);
 
 			for(int i=0; i<PLAYER; i++) {
 				printf("** From Client : Client: %d x: %d y: %d\n", 
@@ -62,6 +61,8 @@ void *threadfunc(void *vargp) {
 			}
 		}
 	}
+
+	return NULL;
 }
 
 int main() {
@@ -107,8 +108,6 @@ int main() {
 
 		np->ns = ns;
 		np->players = p;
-
-		printf("ns : %d\n", *(np->ns));
 
 		if (tid_count < MAX_THREAD) {
 			if (pthread_create(&tid[tid_count], NULL, threadfunc, (void *)np) != 0) {
