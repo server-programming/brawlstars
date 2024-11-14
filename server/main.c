@@ -41,7 +41,7 @@ void *threadfunc(void *vargp) {
 	}
 
 	while(1) {
-		memset(buf, 0, sizeof(buf));
+		memset(buf, '\0', sizeof(buf));
 		network_status = recv(*(np->ns), buf, sizeof(buf), 0);
 
 		if (network_status == -1) {
@@ -108,8 +108,6 @@ int main() {
 
 		np->ns = ns;
 		np->players = p;
-
-		printf("ns : %d\n", *(np->ns));
 
 		if (tid_count < MAX_THREAD) {
 			if (pthread_create(&tid[tid_count], NULL, threadfunc, (void *)np) != 0) {

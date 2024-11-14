@@ -24,6 +24,7 @@ void init_game(int sd) {
 	int ch;
 	int player_dir = 0;
 	player_loc *pl = (player_loc *)malloc(sizeof(player_loc));
+	char buf[256];
 
 	while(1) {
 		clear(); // 화면 지우기
@@ -37,9 +38,9 @@ void init_game(int sd) {
 		
 		// 플레이어 이동 처리
 		if (move_player(&x, &y, ch, &player_dir)) {
-			pl->x = x;
-			pl->y = y;
-			if (send(sd, pl, sizeof(player_loc), 0) == -1) {
+			sprintf(buf, "%d,%d", x, y);
+
+			if (send(sd, buf, sizeof(buf), 0) == -1) {
 				perror("player send");
 				exit(1);
 			}
