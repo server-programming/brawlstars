@@ -18,18 +18,31 @@ typedef struct {
 Bullet bullets[MAX_BULLETS]; // 최대 999개의 총알
 int shot_count = 0; // 발사된 총알 수
 
-void init_game(int sd) {
+void init_game(int sd, int client_num) {
 	int x = COLS / 2;
 	int y = LINES / 2;
 	int ch;
 	int player_dir = 0;
-	player_loc *pl = (player_loc *)malloc(sizeof(player_loc));
 	char buf[256];
+	char *line;
+	char player_pos[1024];
+	player_loc all_players[4];
+	int num_players = 0;
+	int i;
+	int a, b, c;
+
+	// 3-- 서버에게 게임을 시작함을 전달하는 부분
+	memset(buf, '\0', sizeof(buf));
+	sprintf(buf, "client %d is starting game", client_num);
+	if (send(sd, buf, sizeof(buf), 0) == -1) {
+		perror("")
+	}
 
 	while(1) {
 		clear(); // 화면 지우기
-			 //
+			
 		draw_player(x, y); // 플레이어 그리기
+
 		move_bullets(); // 총알 이동 처리
 		
 		refresh(); // 화면 갱신
@@ -38,11 +51,27 @@ void init_game(int sd) {
 		
 		// 플레이어 이동 처리
 		if (move_player(&x, &y, ch, &player_dir)) {
-			sprintf(buf, "%d,%d", x, y);
+			sprintf(buf, "x=%d,y=%d", x, y);
 
 			if (send(sd, buf, sizeof(buf), 0) == -1) {
 				perror("player send");
 				exit(1);
+			}
+
+			if (recv(sd, player_pos, sizeof(player_pos), 0) != -1) {
+			line = strtok(player_pos, "\n");
+			num_players = 0;
+
+			while (line != NULL && num_players < 4) {
+				sscanf(line, "%d,x=%d,y=%d", &a, &all_players[num_players].x, &all_players[num_players].y);
+				line = strtok(NULL, "\n");
+				num_players++;
+			}
+		
+
+			for (int j=0; j<num_players; j++) {
+				draw_player(all_players[j].x, all_players[j].y);
+			}
 			}
 		}
 
@@ -68,8 +97,8 @@ void draw_player(int x, int y) {
 int move_player(int* x, int* y, int ch, int* direction) {
 	if (ch == 'w') (*y)--, *direction = 0; // 위로
 	if (ch == 's') (*y)++, *direction = 2; // 아래로
-	if (ch == 'a') (*x)--, *direction = 3; // 왼쪽으로
-	if (ch == 'd') (*x)++, *direction = 1; // 오른쪽으로
+	if (ch == 'a') (*x)--, *direction = 3;
+	if (ch == 'd') (*x)++, *direction = 1;
 	
 	return 1;
 }
