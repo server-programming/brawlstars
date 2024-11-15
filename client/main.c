@@ -13,87 +13,88 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#define PORTNUM 14023
-#define TIMEOUT_SEC 3
+#define PORTNUM 9001
+#define TIMEOUT_SEC 1
 
 int main() {
 	int client_num;
 	struct sockaddr_in sin;
 	int sd;
-	char buf[256];
+	char buf[50];
 
 	memset((char *)&sin, '\0', sizeof(sin));
 	sin.sin_family = AF_INET;
 	sin.sin_port = htons(PORTNUM);
-	sin.sin_addr.s_addr = inet_addr("172.17.14.162");
+	sin.sin_addr.s_addr = inet_addr("192.168.45.87");
 
 	if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		perror("socket");
 		exit(1);
 	}
 
-    // 소켓을 non-blocking 모드로 설정
-    fcntl(sd, F_SETFL, O_NONBLOCK);
+    	// 소켓을 non-blocking 모드로 설정
+    	fcntl(sd, F_SETFL, O_NONBLOCK);
 
-    // 연결 시도 (비동기 모드에서 즉시 반환)
-    if (connect(sd, (struct sockaddr *)&sin, sizeof(sin)) == -1) {
-        if (errno == EINPROGRESS) {
-            // 연결 대기 상태: select()로 연결 완료를 기다림
-            struct timeval timeout;
-            fd_set writefds;
+    	// 연결 시도 (비동기 모드에서 즉시 반환)
+    	if (connect(sd, (struct sockaddr *)&sin, sizeof(sin)) == -1) {
+        	
+		if (errno == EINPROGRESS) {
+            		// 연결 대기 상태: select()로 연결 완료를 기다림
+            		struct timeval timeout;
+            		fd_set writefds;
 
-            FD_ZERO(&writefds);
-            FD_SET(sd, &writefds);
+            		FD_ZERO(&writefds);
+            		FD_SET(sd, &writefds);
 
-            timeout.tv_sec = TIMEOUT_SEC;   // 타임아웃 설정
-            timeout.tv_usec = 0;
+            		timeout.tv_sec = TIMEOUT_SEC;   // 타임아웃 설정
+            		timeout.tv_usec = 0;
 
-            int res = select(sd + 1, NULL, &writefds, NULL, &timeout);
-            if (res == 0) {  // 타임아웃 발생
-                fprintf(stderr, "Connection timeout: Server IP does not match or server not reachable.\n");
-                close(sd);
-                exit(1);
-            } else if (res < 0) {
-                perror("select");
-                close(sd);
-                exit(1);
-            }
+            		int res = select(sd + 1, NULL, &writefds, NULL, &timeout);
+            		
+			if (res == 0) {  // 타임아웃 발생
+                		fprintf(stderr, "Connection timeout: Server IP does not match or server not reachable.\n");
+                		close(sd);
+                		exit(1);
+            		} else if (res < 0) {
+                		perror("select");
+                		close(sd);
+                		exit(1);
+            		}
 
-            // 연결 성공
-            if (FD_ISSET(sd, &writefds)) {
-                printf("Successfully connected to the server!\n");
-            }
-        } else {
-            perror("connect");
-            close(sd);
-            exit(1);
-        }
-    } else {
-        // 즉시 연결이 성공한 경우
-        printf("Successfully connected to the server!\n");
-    }
+            		// 연결 성공
+            		if (FD_ISSET(sd, &writefds)) {
+                		printf("IP 주소 매칭 확인\n");
+            		}
+        	
+		} else {
+            		perror("connect");
+            		close(sd);
+            		exit(1);
+        	}
+    	} else {
+    		// 즉시 연결이 성공한 경우
+        	printf("Successfully connected to the server!\n");
+    	}
 
-    // 소켓을 non-blocking 모드로 설정
-    fcntl(sd, F_SETFL, F_LOCK);
+    	// 소켓을 blocking 모드로 설정
+    	fcntl(sd, F_SETFL, F_LOCK);
 
-
+	// 1-- 서버로부터 클라이언트 고유 번호를 받는다
 	if (recv(sd, buf, sizeof(buf), 0) == -1) {
-		perror("recv");
+		perror("recv from server --1");
 		exit(1);
 	}
 
+	// 서버로부터 받은 번호를 클라이언트 고유 번호로 지정한다
 	client_num = atoi(buf);
-
 	memset(buf, '\0', sizeof(buf));
 
-	sprintf(buf, "Client %d is online", client_num);
-
+	// 2-- 서버에게 연결되었음을 전달
+	sprintf(buf, "client is online", client_num);
 	if (send(sd, buf, sizeof(buf), 0) == -1) {
-		perror("send");
+		perror("send to server --2");
 		exit(1);
 	}
-
-	printf("server connect!");
 
 	int selected_mode = 0;
 	basic_setting();
@@ -101,7 +102,7 @@ int main() {
 	while (1) {
 		start_menu(&selected_mode);
 		if (selected_mode == 1) {
-			init_game(sd);
+			init_game(sd, client_num);
 		} else if (selected_mode == 2) {
 			help();
 		} else if (selected_mode == 3) {
