@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include <pthread.h>
 
-#define PORTNUM 9001
+#define PORTNUM 23042
 #define MAX_THREAD 100
 #define PLAYER 4
 
