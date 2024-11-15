@@ -79,6 +79,7 @@ int main() {
             perror("connect");
             close(sd);
             exit(1);
+        }
     } else { // 즉시 연결 성공
         printf("Successfully connected to the server!\n");
     }
