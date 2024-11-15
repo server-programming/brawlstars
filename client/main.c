@@ -110,7 +110,7 @@ int main() {
 		start_menu(&selected_mode); // 시작 메뉴 표시 및 모드 선택
 		if (selected_mode == 1) { // 게임 시작
 			init_game(sd, client_num);
-		} else if (selected_mode == 2) { // 도움말(매뉴얼) 표시
+		} else if (selected_mode == 2) { // 도움말 표시
 			help();
 		} else if (selected_mode == 3) { // 종료
 			break;
