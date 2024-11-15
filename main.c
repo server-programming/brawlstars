@@ -14,7 +14,7 @@
 #include <errno.h>
 
 #define PORTNUM 9001
-#define TIMEOUT_SEC 3
+#define TIMEOUT_SEC 1
 
 int main() {
 	int client_num;
@@ -25,7 +25,7 @@ int main() {
 	memset((char *)&sin, '\0', sizeof(sin));
 	sin.sin_family = AF_INET;
 	sin.sin_port = htons(PORTNUM);
-	sin.sin_addr.s_addr = inet_addr("172.27.65.48");
+	sin.sin_addr.s_addr = inet_addr("192.168.45.87");
 
 	if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		perror("socket");
@@ -81,20 +81,18 @@ int main() {
 
 	// 1-- 서버로부터 클라이언트 고유 번호를 받는다
 	if (recv(sd, buf, sizeof(buf), 0) == -1) {
-		perror("recv");
+		perror("recv from server --1");
 		exit(1);
 	}
 
-	// 클라이언트 고유 번호 지정
+	// 서버로부터 받은 번호를 클라이언트 고유 번호로 지정한다
 	client_num = atoi(buf);
-
 	memset(buf, '\0', sizeof(buf));
 
 	// 2-- 서버에게 연결되었음을 전달
-	sprintf(buf, "Client %d is online", client_num);
-
+	sprintf(buf, "client is online", client_num);
 	if (send(sd, buf, sizeof(buf), 0) == -1) {
-		perror("send");
+		perror("send to server --2");
 		exit(1);
 	}
 
@@ -112,6 +110,8 @@ int main() {
 		}
 	}
 	endwin(); // ncurses 종료
+	
+	close(sd);
 
 	return 0;
 }

@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include <pthread.h>
 
-#define PORTNUM 23042
+#define PORTNUM 9001
 #define MAX_THREAD 100
 #define PLAYER 4
 
@@ -35,90 +35,96 @@ void *threadfunc(void *vargp) {
 	char buf[50];
 	char player_pos[1024];
 	int network_status;
+	int client_x;
+	int client_y;
 
 	// 1-- 클라이언트에게 고유 번호 매겨서 전달 서버:send
 	int cur_client_num = np->cur_client;
-	printf("cur_client_num %d\n", cur_client_num);
 	sprintf(buf, "%d", cur_client_num);
-
-	if (send(np->ns[cur_client_num], buf, strlen(buf), 0) == -1) {
-		perror("send to client -- 1");
-		exit(1);
+	network_status = send(np->ns[cur_client_num], buf, sizeof(buf), 0);
+	if (network_status  == -1) {
+		perror("send to client --1");
+		close(np->ns[cur_client_num]);
+		np->ns[cur_client_num] = 0;
 	}
+	memset(buf, '\0', sizeof(buf));
 
-	// 2-- 클라이언트가 서버에게 연결되었음을 알려줄 부분, 서버:recv
+	// 2-- 클라이언트가 서버에게 연결되었음을 알려준다
 	if (recv(np->ns[cur_client_num], buf, sizeof(buf), 0) == -1) {
-		perror("recv to client -- 2");
-		exit(1);
+		perror("recv from client --2");
+		close(np->ns[cur_client_num]);
+		np->ns[cur_client_num] = 0;
 	}
-
+	printf("**(2) From Client %d: %s\n", cur_client_num, buf);
+	memset(buf, '\0', sizeof(buf));
 
 	// 3-- 클라이언트가 서버에게 게임을 시작함을 전달하는 부분 서버:recv
-	
-
-	// 클라이언트가 서버에게 데이터를 전달하는 부분, 서버:recv
-	
-	// 서버가 클라이언트들에게 데이터를 전달하는 부분, 서버:recv
-
-
-	if (send(np->ns[cur_client_num], buf, strlen(buf), 0) == -1) {
-		printf("client : %d, ns = %d\n", cur_client_num, np->ns[cur_client_num]);
-		perror("send");
-		exit(1);
+	network_status = recv(np->ns[cur_client_num], buf, sizeof(buf), 0);
+	if (network_status == -1) {
+		perror("recv from client --3");
+		close(np->ns[cur_client_num]);
+		np->ns[cur_client_num] = 0;
+		return NULL;
+	} else if (network_status == 0) {
+		printf("**(3) From Client %d: client is offline\n", cur_client_num);
+		close(np->ns[cur_client_num]);
+		np->ns[cur_client_num] = 0;
+		return NULL;
 	}
 
+	printf("**(3) From Client %d: %s\n", cur_client_num, buf);
+	memset(buf, '\0', sizeof(buf));
+
+	// 게임 속 서버와 클라이언트의 통신
 	while(1) {
+		// 4-- 서버는 클라이언트에게 지속적으로 위치 정보를 받는다
 		memset(buf, '\0', sizeof(buf));
 		network_status = recv(np->ns[cur_client_num], buf, sizeof(buf), 0);
-
 		if (network_status == -1) {
-			perror("recv");
+			perror("recv from client --4");
 			break;
 		} else if (network_status == 0) {
-			printf("** From Client %d : Client is offline\n", cur_client_num);
+			printf("**(4) From Client %d: client is offline\n", cur_client_num);
 			break;
-		} else {
+		}
 
-			if (strstr(buf, "=") != NULL) {
-				sscanf(buf, "x=%d,y=%d", &np->players[cur_client_num].x
-						, &np->players[cur_client_num].y);
-
-				for(int i=0; i<PLAYER; i++) {
-					printf("*** From Client %d : x: %d y: %d\n", 
-							i, np->players[i].x, np->players[i].y);
-				}
-				printf("\n");
-
-				// 서버가 모든 클라이언트들의 위치를 모든 클라이언트들에게 전달한다
-				memset(buf, '\0', sizeof(buf));
-				memset(player_pos, '\0', sizeof(player_pos));
-
-				for(int i=0; i<PLAYER; i++) {
-					sprintf(buf, "%d,x=%d,y=%d\n", 
-							i, np->players[i].x, np->players[i].y);
-					strcat(player_pos, buf);
-				}
-
-				for(int i=0; i<PLAYER; i++) {
-					if (np->ns[i] > 0) {
-						if (send(np->ns[i], player_pos, strlen(player_pos), 0) == -1) {
-							perror("send to client");
-							exit(1);
-						}
-					}
-				}
-				
+		// 클라이언트의 위치를 갱신한다
+		sscanf(buf, "x=%d,y=%d", &client_x, &client_y);
+		np->players[cur_client_num].x = client_x;
+		np->players[cur_client_num].y = client_y;
+		memset(buf, '\0', sizeof(buf));
+		memset(player_pos, '\0', sizeof(player_pos));
+		
+		// 클라이언트들의 위치 정보를 보낼 데이터를 준비한다
+		for(int i=0; i<PLAYER; i++) {
+			if (np->ns[cur_client_num] != 0) {
+				sprintf(buf, "%d,x=%d,y=%d\n", i, np->players[i].x, np->players[i].y);
+				strcat(player_pos, buf);
 			} else {
-				printf("** From Client : %s\n", buf);
+				sprintf(buf, "%d,x=0,y=0\n", i);
 			}
+		}
 
+		for (int i=0; i<PLAYER; i++) {
+			printf("client %d: x: %d y:%d\n", i, np->players[i].x, np->players[i].y);
+		}
+		printf("\n");
+		
+		// 5-- 서버가 클라이언트들에게 위치 정보를 전달한다
+		network_status = send(np->ns[cur_client_num], player_pos, sizeof(player_pos), 0);
+		if (network_status == -1) {
+			perror("send to client --5");
+		} else if (network_status == 0) {
+			printf("**(5) From Client %d: client is offline\n", cur_client_num);
+			break;
 		}
 	}
-
+	
+	// 클라이언트가 오프라인일 경우 정보를 초기화한다
+	np->players[cur_client_num].x = 0;
+	np->players[cur_client_num].y = 0;
 	close(np->ns[cur_client_num]);
 	np->ns[cur_client_num] = 0;
-
-	printf("ns->ns : %d\n", np->ns[cur_client_num]);
 
 	return NULL;
 }
@@ -155,12 +161,7 @@ int main() {
 
 	while(1) {
 
-		for(int i=0; i<PLAYER; i++) {
-			printf("** client %d  ns %d\n", i, np->ns[i]);
-		}
-
 		// 서버는 클라이언트가 접속을 요청할 경우, ns 배열이 비었는지 보고 빈 곳이 있다면 그곳에 넣는다
-		
 		temp_ns = accept(sd, (struct sockaddr *)&cli, &clientlen);
 		if (temp_ns == -1) {
 			perror("accept");
@@ -184,6 +185,7 @@ int main() {
 			continue;
 		}
 
+		// 쓰레드 생성
 		if (tid_count < MAX_THREAD) {
 			if (pthread_create(&tid[tid_count], NULL, threadfunc, (void *)np) != 0) {
 				perror("pthread_create");
@@ -192,11 +194,7 @@ int main() {
 				tid_count++;
 			}
 		} else {
-			fprintf(stderr, "Maximum number of clients reached.\n");
-		}
-
-		for(int i=0; i<PLAYER; i++) {
-			printf("ns : %d\n", np->ns[i]);
+			printf("Maximum number of clients reached.\n");
 		}
 	}
 

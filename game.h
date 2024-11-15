@@ -14,7 +14,7 @@ void init_game();
 void draw_player(int x, int y);
 
 // 플레이어 이동 함수
-int move_player(int* x, int* y, int ch, int* direction);
+void move_player(int* x, int* y, int ch, int* direction);
 
 // 총알 발사 함수
 void shoot_bullet(int x, int y, int direction);

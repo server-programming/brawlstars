@@ -2,7 +2,7 @@
 #include "game.h"
 
 // 플레이어 초기 위치
-#define PLAYER_CHAR '🚖'
+#define PLAYER_CHAR 'O'
 
 // 총알 구조체
 typedef struct {
@@ -23,19 +23,25 @@ void init_game(int sd, int client_num) {
 	int y = LINES / 2;
 	int ch;
 	int player_dir = 0;
-	char buf[256];
+	char buf[50];
 	char *line;
 	char player_pos[1024];
 	player_loc all_players[4];
 	int num_players = 0;
-	int i;
-	int a, b, c;
+	int id, x1, y1;
+
+	initscr(); // ncurses 초기화
+	cbreak(); // 즉시 입력 모드
+	noecho(); // 입력값 출력하지 않음
+	curs_set(0); // 커서 숨기기
+	nodelay(stdscr, TRUE); // 비차단 모드 설정
+	keypad(stdscr, TRUE); // 특수 키 입력 활성화
 
 	// 3-- 서버에게 게임을 시작함을 전달하는 부분
 	memset(buf, '\0', sizeof(buf));
-	sprintf(buf, "client %d is starting game", client_num);
+	sprintf(buf, "client is starting game", client_num);
 	if (send(sd, buf, sizeof(buf), 0) == -1) {
-		perror("")
+		perror("send to server --3");
 	}
 
 	while(1) {
@@ -43,45 +49,50 @@ void init_game(int sd, int client_num) {
 			
 		draw_player(x, y); // 플레이어 그리기
 
+		// 4-- 클라이언트는 무조건 서버로 위치 정보를 보낸다
+		memset(buf, '\0', sizeof(buf));
+		sprintf(buf, "x=%d,y=%d", x, y);
+		if (send(sd, buf, sizeof(buf), 0) == -1) {
+			perror("send to server --4");
+			exit(1);
+		}
+
+		// 5-- 클라이언트는 무조건 서버로부터 위치 정보들을 받는다
+		memset(player_pos, '\0', sizeof(player_pos));
+		if (recv(sd, player_pos, sizeof(player_pos), 0) == -1) {
+			perror("recv from server --5");
+			exit(1);
+		}
+
+		// 모든 클라이언트들 그리기
+		line = strtok(player_pos, "\n");
+		while(line != NULL) {
+			if (sscanf(line, "%d,x=%d,y=%d", &id, &x1, &y1) == 3) {
+				draw_player(x1, y1);
+			}
+			line = strtok(NULL, "\n");
+		}
+
 		move_bullets(); // 총알 이동 처리
 		
 		refresh(); // 화면 갱신
 		
 		ch = getch(); // 사용자 입력 받기
 		
-		// 플레이어 이동 처리
-		if (move_player(&x, &y, ch, &player_dir)) {
-			sprintf(buf, "x=%d,y=%d", x, y);
+		if (ch != ERR) { // 입력이 없으면 넘어감
 
-			if (send(sd, buf, sizeof(buf), 0) == -1) {
-				perror("player send");
-				exit(1);
+			// 플레이어 이동 처리
+			move_player(&x, &y, ch, &player_dir);
+
+			// 총알 발사 처리
+			if (ch == '\n') {
+				shoot_bullet(x, y, player_dir);
 			}
 
-			if (recv(sd, player_pos, sizeof(player_pos), 0) != -1) {
-			line = strtok(player_pos, "\n");
-			num_players = 0;
-
-			while (line != NULL && num_players < 4) {
-				sscanf(line, "%d,x=%d,y=%d", &a, &all_players[num_players].x, &all_players[num_players].y);
-				line = strtok(NULL, "\n");
-				num_players++;
+			// 메뉴 화면으로 
+			if (ch == 'q') {
+				break;
 			}
-		
-
-			for (int j=0; j<num_players; j++) {
-				draw_player(all_players[j].x, all_players[j].y);
-			}
-			}
-		}
-
-		// 총알 발사 처리
-		if (ch == '\n') {
-			shoot_bullet(x, y, player_dir);
-		}
-		
-		if (ch == 'q') {
-			break;
 		}
 
 		napms(10); // 10ms 대기
@@ -94,13 +105,11 @@ void draw_player(int x, int y) {
 }
 
 // 플레이어 이동
-int move_player(int* x, int* y, int ch, int* direction) {
+void move_player(int* x, int* y, int ch, int* direction) {
 	if (ch == 'w') (*y)--, *direction = 0; // 위로
 	if (ch == 's') (*y)++, *direction = 2; // 아래로
 	if (ch == 'a') (*x)--, *direction = 3;
 	if (ch == 'd') (*x)++, *direction = 1;
-	
-	return 1;
 }
 
 // 총알 발사
