@@ -25,14 +25,27 @@ Bullet bullets[MAX_BULLETS];  // 총알 배열
 int bullet_count = 0;  // 총알 개수
 
 // 총알 발사 함수
-void fire_bullet(int x, int y) {
+void fire_bullet(int x, int y, int direction) {
     if (bullet_count < MAX_BULLETS) {
         // 총알 초기화
         Bullet *b = &bullets[bullet_count++];
         b->x = x;
         b->y = y;
-        b->dx = 0;  // 위로 발사
-        b->dy = -1; // y 감소 (위로)
+
+        // 방향에 따라 총알의 dx, dy 설정
+        if (direction == 0) {  // 위쪽
+            b->dx = 0;
+            b->dy = -1;
+        } else if (direction == 2) {  // 아래쪽
+            b->dx = 0;
+            b->dy = 1;
+        } else if (direction == 1) {  // 오른쪽
+            b->dx = 1;
+            b->dy = 0;
+        } else if (direction == 3) {  // 왼쪽
+            b->dx = -1;
+            b->dy = 0;
+        }
     }
 }
 
@@ -44,7 +57,7 @@ void move_bullets() {
         b->y += b->dy;
 
         // 화면 밖으로 나갔을 경우, 총알 제거
-        if (b->y < 0) {  // 화면 위로 나가면 제거
+        if (b->x < 0 || b->x >= COLS || b->y < 0 || b->y >= LINES) {
             for (int j = i; j < bullet_count - 1; j++) {
                 bullets[j] = bullets[j + 1];  // 배열 이동
             }
@@ -113,7 +126,7 @@ void init_game(int sd) {
 
         // 플레이어 그리기
         draw_player(x, y, player_shapes->shapes[current_shape]);
-
+        
         // 총알 이동 및 그리기
         move_bullets();
         draw_bullets();
@@ -137,9 +150,15 @@ void init_game(int sd) {
             current_shape = (current_shape + 1) % MAX_SHAPES;  // 다음 모양으로 변경
         }
 
-        // 위쪽 방향키를 눌렀을 때 총알 발사
+        // 방향키를 눌렀을 때 총알 발사
         if (ch == KEY_UP) {
-            fire_bullet(x, y - 1);  // 캐릭터 위쪽에서 총알 발사
+            fire_bullet(x, y - 1, 0);  // 위쪽 방향으로 총알 발사
+        } else if (ch == KEY_DOWN) {
+            fire_bullet(x, y + 1, 2);  // 아래쪽 방향으로 총알 발사
+        } else if (ch == KEY_RIGHT) {
+            fire_bullet(x + 1, y, 1);  // 오른쪽 방향으로 총알 발사
+        } else if (ch == KEY_LEFT) {
+            fire_bullet(x - 1, y, 3);  // 왼쪽 방향으로 총알 발사
         }
 
         if (ch == 'q') {

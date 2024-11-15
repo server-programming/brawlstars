@@ -3,7 +3,7 @@
 
 #include <wchar.h>  // wchar_t 지원
 
-// center_text 함수 수정: wchar_t* 타입을 받도록 변경
+void basic_setting();
 void center_text(int row, int col, const wchar_t* text);
 void print_menu();
 int get_mode();
