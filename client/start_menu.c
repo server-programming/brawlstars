@@ -1,7 +1,6 @@
 #include <ncurses.h>
-#include <locale.h>
-#include <wchar.h>  // wchar_t 타입을 위한 헤더 추가
-#include <unistd.h> // sleep 함수 사용을 위한 헤더 추가
+#include <wchar.h>  
+#include <unistd.h>
 #include <string.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>

@@ -18,6 +18,7 @@
 // 사용자 정의 모듈
 #include "basic_setting.h"
 #include "start_menu.h"
+#include "lobby.h"
 #include "game.h"
 #include "help.h"
 
@@ -111,7 +112,8 @@ int main() {
 	while (1) {
 		start_menu(&selected_mode); // 시작 메뉴 표시 및 모드 선택
 		if (selected_mode == 1) { // 게임 시작
-			init_game(sd, client_num);
+            lobby(sd, client_num);
+			// init_game(sd, client_num);
 		} else if (selected_mode == 2) { // 도움말 표시
 			help();
 		} else if (selected_mode == 3) { // 종료
