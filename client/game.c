@@ -5,88 +5,30 @@
 #include <sys/socket.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
+// 사용자 정의 모듈
 #include "game.h"
 #include "player_shape.h"
 #include "map.h"
 #include "background_music.h"
-
-// 플레이어와 총알 관련 정의
-#define MAX_BULLETS 999
-#define PLAYER_CHAR 'O'
-
-typedef struct {
-    int x, y;
-    int dx, dy;
-} Bullet;
-
-typedef struct {
-    int x, y;
-} player_loc;
-
-Bullet bullets[MAX_BULLETS];
-int bullet_count = 0;
-
-// 총알 발사
-void shoot_bullet(int x, int y, int direction) {
-    if (bullet_count < MAX_BULLETS) {
-        Bullet *b = &bullets[bullet_count++];
-        b->x = x;
-        b->y = y;
-        b->dx = (direction == 1) - (direction == 3); // 오른쪽 1, 왼쪽 -1
-        b->dy = (direction == 2) - (direction == 0); // 아래 1, 위 -1
-    }
-}
-
-// 총알 이동
-void move_bullets() {
-    for (int i = 0; i < bullet_count; i++) {
-        bullets[i].x += bullets[i].dx;
-        bullets[i].y += bullets[i].dy;
-
-        if (bullets[i].x < 0 || bullets[i].x >= COLS || bullets[i].y < 0 || bullets[i].y >= LINES) {
-            for (int j = i; j < bullet_count - 1; j++) {
-                bullets[j] = bullets[j + 1];
-            }
-            bullet_count--;
-            i--;
-        }
-    }
-}
-
-// 총알 그리기
-void draw_bullets() {
-    for (int i = 0; i < bullet_count; i++) {
-        mvaddch(bullets[i].y, bullets[i].x, '*');
-    }
-}
-
-// 플레이어 그리기
-void draw_player(int x, int y, wchar_t *player_shape) {
-    mvaddwstr(y, x, player_shape);
-}
-
-// 플레이어 이동
-void move_player(int *x, int *y, int ch, int *direction) {
-    if (ch == 'w') (*y)--, *direction = 0; // 위로
-    if (ch == 's') (*y)++, *direction = 2; // 아래로
-    if (ch == 'a') (*x)--, *direction = 3; // 왼쪽으로
-    if (ch == 'd') (*x)++, *direction = 1; // 오른쪽으로
-}
+#include "player.h"
+#include "bullet.h"
 
 // 게임 초기화 및 루프
 void init_game(int sd, int client_num) {
+    // 플레이어의 초기 위치 및 방향
     int x = COLS / 2, y = LINES / 2, player_dir;
+    // 데이터 송신을 위한 버퍼
     char buf[256], player_pos[1024];
-    char ch;
-    player_loc all_players[4];
+    char ch; // 플레이어가 입력하는 키
+    player_loc all_players[4]; // 4명의 플레이어 위치를 저장
     int id, x1, y1;
-
-    initscr();
-    cbreak();
-    noecho();
-    curs_set(0);
-    nodelay(stdscr, TRUE);
-    keypad(stdscr, TRUE);
+    
+    initscr(); // ncurses 초기화
+    cbreak(); // 입력 버퍼링 비활성화
+    noecho(); // 키 입력을 화면에 표시하지 않음
+    curs_set(0); // 커서 숨기기
+    nodelay(stdscr, TRUE); // getch()가 블로킹되지 않도록 설정
+    keypad(stdscr, TRUE); // 특수 키 처리 활성화
 
     // 오디오 초기화
     if (SDL_Init(SDL_INIT_AUDIO) < 0 || Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {

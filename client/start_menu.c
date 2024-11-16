@@ -10,16 +10,6 @@
 #include "ascii_art.h"
 #include "background_music.h"
 
-// 기본 설정 함수
-void basic_setting() {
-    setlocale(LC_ALL, ""); // 로케일 설정
-    initscr(); // ncurses 초기화
-    cbreak(); // 즉시 입력 모드 설정
-    noecho(); // 입력된 문자를 화면에 표시하지 않음
-    keypad(stdscr, TRUE); // 특수 키 입력 허용
-    setlocale(LC_CTYPE, "");
-}
-
 // 메뉴 출력 함수
 void print_menu() {
     const wchar_t* menu_items[] = {

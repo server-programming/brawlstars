@@ -16,6 +16,7 @@
 #include <errno.h>
 
 // 사용자 정의 모듈
+#include "basic_setting.h"
 #include "start_menu.h"
 #include "game.h"
 #include "help.h"
