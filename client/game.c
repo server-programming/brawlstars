@@ -143,12 +143,12 @@ void init_game(int sd, int client_num) {
             shoot_bullet(x, y, player_dir);
         }
 
-        // 플레이어 모양 변경
-        if (ch == 'c') {
-            current_shape = (current_shape + 1) % MAX_SHAPES;
-        }
+        // 플레이어 모양 변경 (디버깅용)
+        // if (ch == 'c') {
+        //    current_shape = (current_shape + 1) % MAX_SHAPES;
+        // }
 
-        if (ch == 'q') break;
+        // if (ch == 'q') break;
 
         napms(10);
     }

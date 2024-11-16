@@ -6,50 +6,9 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
 #include "start_menu.h"
+#include "text_align.h"
+#include "ascii_art.h"
 #include "background_music.h"
-
-// 아스키 아트를 출력하는 함수들
-
-// 첫 번째 아스키 아트: 상자에 들어간 텍스트와 캐릭터
-void print_art1(int row, int col, const wchar_t* text) {
-    const wchar_t* top_bottom = L"|￣￣￣￣￣￣￣￣￣￣￣￣￣￣|";
-    const wchar_t* line1 = L"|＿＿＿＿＿＿＿＿＿＿＿＿＿＿|";
-
-    // 화면의 가로 길이를 기준으로 중앙 정렬
-    int center_col = (col - wcslen(top_bottom)) / 2 - 4;
-    mvaddwstr(row, center_col, top_bottom);  // 상단 테두리
-    mvaddwstr(row + 1, (col - wcslen(text)) / 2, text);  // 사용자 텍스트 출력
-    mvaddwstr(row + 2, center_col, line1);  // 하단 테두리
-}
-
-// 두 번째 아스키 아트: 전투용 아스키 아트
-void print_art2(int row, int col) {
-    const wchar_t* art[] = {
-        L"_/﹋\\_",
-        L"(҂`_´)",
-        L"<,︻╦╤─ ҉ - -",
-        L"_/﹋\\"
-    };
-    for (int i = 0; i < 4; i++) {
-        mvaddwstr(row + i, col, art[i]);  // 주어진 열 위치에서 바로 출력
-    }
-}
-
-
-
-// 아스키 아트를 출력하는 함수 선택
-void print_ascii_art(int art_type, int row, int col, const wchar_t* text) {
-    switch (art_type) {
-        case 1:
-            print_art1(row, col, text);
-            break;
-        case 2:
-            print_art2(row, col);
-            break;
-        default:
-            break;
-    }
-}
 
 // 기본 설정 함수
 void basic_setting() {
@@ -59,11 +18,6 @@ void basic_setting() {
     noecho(); // 입력된 문자를 화면에 표시하지 않음
     keypad(stdscr, TRUE); // 특수 키 입력 허용
     setlocale(LC_CTYPE, "");
-}
-
-// 텍스트 중앙 정렬 출력 함수
-void center_text(int row, int col, const wchar_t* text) {
-    mvaddwstr(row, (col - wcslen(text)) / 2, text);  // mvaddwstr 사용
 }
 
 // 메뉴 출력 함수
@@ -112,9 +66,8 @@ void start_menu(int* selected_mode) {
     while(1) {
         clear(); // 화면 지우기
 
-        print_ascii_art(1, 15, COLS, L"브롤스타즈");  // 첫 번째 아트
-        print_ascii_art(2, 6, 4, NULL);  // 두 번째 아트 1개: 왼쪽 상단
-        print_ascii_art(2, 1, 12, NULL);  // 두 번째 아트 2개: 왼쪽 상단 바로 아래
+        print_ascii_art(L"mafia", 6, 4);  // 두 번째 아트 1개: 왼쪽 상단
+        print_ascii_art(L"mafia", 1, 12);  // 두 번째 아트 2개: 왼쪽 상단 바로 아래
 
         // 메뉴 출력
         print_menu();

@@ -4,7 +4,7 @@
 
 PlayerShape* get_player_shape() {
     // 플레이어의 스킨(모양) 리스트를 초기화
-    static PlayerShape player = {
+    static PlayerShape player = {{
         L"▄︻字═━──",
         L"︻̷═━一",
         L"▄︻デ气═━─",
@@ -21,7 +21,7 @@ PlayerShape* get_player_shape() {
 	    L"(ง •̀_•́)ง",
 	    L"╭( ･ㅂ･)و",
 	    L"╭( ･ㅂ･)ว",
-    };
+    }};
 
     // 시드 설정 (현재 시간 기준)
     srand(time(NULL));
