@@ -58,7 +58,7 @@ void init_game(int sd, int client_num) {
         move_player(&x, &y, ch, &player_dir);
 
         // 서버에 플레이어 위치를 전달
-        snprintf(buf, sizeof(buf), "x=%d,y=%d", x, y);
+        snprintf(buf, sizeof(buf), "<<game>>x=%d,y=%d", x, y);
         if (send(sd, buf, sizeof(buf), 0) == -1) {
             perror("send to server");
             break;

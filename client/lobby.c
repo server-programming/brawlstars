@@ -37,25 +37,25 @@ void print_concurrent_users(int concurrent_users, long long ping) {
 }
 
 // 동시 접속자 수 반환
-int get_concurrent_users(int sd) {
-    int concurrent_users = -1;
+// int get_concurrent_users(int sd) {
+   //  int concurrent_users = -1;
 
-    const char* request = "GET_CONCURRENT_USERS"; // 동시 접속자 수 확인 요청
-    if (send(sd, request, strlen(request), 0) < 0) {
-        perror("Error sending request to server");
-        return -1;
-    }    
+    // const char* request = "GET_CONCURRENT_USERS"; // 동시 접속자 수 확인 요청
+    // if (send(sd, request, strlen(request), 0) < 0) {
+    //    perror("Error sending request to server");
+    //    return -1;
+    //}    
 
-    char buffer[256]; // 서버로부터 동시 접속자 수 응답 수신
-    if (recv(sd, buffer, sizeof(buffer) - 1, 0) < 0) {
-        perror("Error receiving reposne from server");
-        return -1;
-    }
+    //char buffer[256]; // 서버로부터 동시 접속자 수 응답 수신
+    //if (recv(sd, buffer, sizeof(buffer) - 1, 0) < 0) {
+    //    perror("Error receiving reposne from server");
+    //    return -1;
+    //}
     
     // 문자열로 받은 동시 접속자 수를 정수로 변환
-    concurrent_users = atoi(buffer);
-    return concurrent_users; // 동시 접속자 수 반환
-}
+    //concurrent_users = atoi(buffer);
+    //return concurrent_users; // 동시 접속자 수 반환
+//}
 
 // 도움말 화면을 표시하며, ESC 키를 누를 때까지 대기
 void lobby(int sd, int client_num) {
