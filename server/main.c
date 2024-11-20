@@ -28,7 +28,13 @@ typedef struct {
 	int sd;
 } network;
 
+//네트워크 연결이 잘 되었는지 확인하는 함수 선언
 network network_connection();
+
+int connection(int ns, int cur_client_num, char *buf);
+
+// 현재 대기 중인 플레이어수를 저장하는 변수
+int cur_player = 0;
 
 void *threadfunc(void *vargp) {
 	network_player *np = (network_player *)vargp;
@@ -37,26 +43,59 @@ void *threadfunc(void *vargp) {
 	int network_status;
 	int client_x;
 	int client_y;
-
-	// 1-- 클라이언트에게 고유 번호 매겨서 전달 서버:send
 	int cur_client_num = np->cur_client;
-	sprintf(buf, "%d", cur_client_num);
-	network_status = send(np->ns[cur_client_num], buf, sizeof(buf), 0);
-	if (network_status  == -1) {
-		perror("send to client --1");
-		close(np->ns[cur_client_num]);
-		np->ns[cur_client_num] = 0;
-	}
-	memset(buf, '\0', sizeof(buf));
+	int ns = np->ns[cur_client_num];
 
-	// 2-- 클라이언트가 서버에게 연결되었음을 알려준다
-	if (recv(np->ns[cur_client_num], buf, sizeof(buf), 0) == -1) {
-		perror("recv from client --2");
-		close(np->ns[cur_client_num]);
-		np->ns[cur_client_num] = 0;
+	while(1) {
+		memset(buf, '\0', sizeof(buf));
+		network_status = recv(ns, buf, sizeof(buf), 0);
+
+		if (network_status == -1) {
+			perror("recv");
+			break;
+		} else if (network_status == 0) {
+			break;
+		}
+
+		// 클라이언트가 서버와 연결될 경우
+		if (strstr(buf, "<<connect>>") != NULL) {
+			// 클라이언트 연결에 오류가 있거나 오프라인일 경우 0을 반환
+			if (connection(np->ns[cur_client_num], cur_client_num, buf) == 0) {
+				break;
+			}
+			printf("Client %d is online\n", cur_client_num);
+			cur_player++;
+		}
+
+
+		// 클라이언트가 로비에 접속하는 경우 동접자 수를 늘린다
+		// 서버는 동접자 수를 전송한다
+		if (strstr(buf, "<<lobby>>") != NULL) {
+			memset(buf, '\0', sizeof(buf));
+			sprintf(buf, "%d", cur_player);
+			if (connection(np->ns[cur_client_num], cur_client_num, buf) == 0) {
+				break;
+			}
+		}
+		
+
 	}
-	printf("**(2) From Client %d: %s\n", cur_client_num, buf);
-	memset(buf, '\0', sizeof(buf));
+
+	printf("client %d is offline\n", cur_client_num);
+	cur_player--;
+	close(np->ns[cur_client_num]);
+	np->ns[cur_client_num] = 0;
+	np->players[cur_client_num].x = 0;
+	np->players[cur_client_num].y = 0;
+
+	return NULL;
+
+
+	// 클라이언트가 로비에 접속했음을 알려준다
+	if (recv(np->ns[cur_client_num], buf, sizeof(buf), 0) == -1) {
+		perror("lobby, recv");
+		exit(1);
+	}
 
 	// 3-- 클라이언트가 서버에게 게임을 시작함을 전달하는 부분 서버:recv
 	network_status = recv(np->ns[cur_client_num], buf, sizeof(buf), 0);
@@ -119,12 +158,6 @@ void *threadfunc(void *vargp) {
 			break;
 		}
 	}
-	
-	// 클라이언트가 오프라인일 경우 정보를 초기화한다
-	np->players[cur_client_num].x = 0;
-	np->players[cur_client_num].y = 0;
-	close(np->ns[cur_client_num]);
-	np->ns[cur_client_num] = 0;
 
 	return NULL;
 }
@@ -208,6 +241,23 @@ int main() {
 	free(np);
 
 	return 0;
+}
+
+int connection(int ns, int cur_client_num, char *buf) {
+	int network_status;
+	char buf1[50];
+
+	strcpy(buf1, buf);
+
+	memset(buf1, '\0', sizeof(buf1));
+	sprintf(buf1, "%d", cur_client_num);
+	network_status = send(ns, buf, sizeof(buf1), 0);
+
+	if (network_status == -1 || network_status == 0) {
+		return 0;
+	} else {
+		return 1;
+	}
 }
 
 

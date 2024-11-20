@@ -15,17 +15,17 @@
 #include "ping_time.h"
 
 // 동시 접속자 수 출력
-void print_concurrent_users(int sd) {
-    int concurrent_users = 1;
-    struct timeval start, end;
+void print_concurrent_users(int concurrent_users, long long ping) {
+    // int concurrent_users = 1;
+    // struct timeval start, end;
     
     // 응답 시간 측정 시작
-    gettimeofday(&start, NULL);   
+    // gettimeofday(&start, NULL);   
     // int concurrent_users = get_concurrent_users(sd); // 동시 접속자 수 저장
     // 응답 시간 측정 종료
-    gettimeofday(&end, NULL);
+    // gettimeofday(&end, NULL);
     
-    long long ping = get_ms(start, end);     
+    // long long ping = get_ms(start, end);     
     
     // 동시 접속자 수 출력 형식 지정
     wchar_t wstr[50];
@@ -59,9 +59,35 @@ int get_concurrent_users(int sd) {
 
 // 도움말 화면을 표시하며, ESC 키를 누를 때까지 대기
 void lobby(int sd, int client_num) {
+	
+	int concurrent_users;
+	char buf[50];
+	struct timeval start, end;
+
 	while(1) {
+		memset(buf, '\0', sizeof(buf));
+		sprintf(buf, "<<lobby>>");
+
+		// 응답 속도 측정
+		gettimeofday(&start, NULL);
+		if (send(sd, buf, sizeof(buf), 0) == -1) {
+			perror("send");
+			exit(1);
+		}
+		memset(buf, '\0', sizeof(buf));
+		if (recv(sd, buf, sizeof(buf), 0) == -1) {
+			perror("recv");
+			exit(1);
+		}
+
+		// 응답 속도 측정 종료
+		gettimeofday(&end, NULL);
+
+		concurrent_users = atoi(buf);
+		long long ping = get_ms(start, end);
+
 		clear(); // 화면 지우기
-		print_concurrent_users(sd); // 매뉴얼 출력
+		print_concurrent_users(concurrent_users, ping); // 동접자 수 출력
 		refresh(); // 화면 갱신
 
 		int ch = getch(); // 사용자 입력 받기
