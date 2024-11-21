@@ -37,7 +37,7 @@ int main() {
 	memset((char *)&sin, '\0', sizeof(sin));
 	sin.sin_family = AF_INET; // IPv4 체계
 	sin.sin_port = htons(PORTNUM); // 포트 번호 설정 (네트워크 바이트 순서로 변환)
-	sin.sin_addr.s_addr = inet_addr("172.27.65.45"); // 서버 IP 주소 설정 (접속할 때마다 확인 요망)
+	sin.sin_addr.s_addr = inet_addr("127.0.0.1"); // 서버 IP 주소 설정 (접속할 때마다 확인 요망)
     
 	// 소켓 생성
 	if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
@@ -114,8 +114,8 @@ int main() {
 	while (1) {
 		start_menu(&selected_mode); // 시작 메뉴 표시 및 모드 선택
 		if (selected_mode == 1) { // 게임 시작
-            		lobby(sd, client_num);
-			// init_game(sd, client_num);
+			// lobby(sd, client_num);
+			init_game(sd, client_num);
 		} else if (selected_mode == 2) { // 도움말 표시
 			help();
 		} else if (selected_mode == 3) { // 종료

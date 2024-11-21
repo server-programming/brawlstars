@@ -4,7 +4,7 @@
 #include <wchar.h>
 
 // 플레이어가 가질 수 있는 스킨(모양)의 개수
-#define MAX_SHAPES 18
+#define MAX_SHAPES 16
 
 // PlayerShape 구조체 정의
 typedef struct {

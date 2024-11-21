@@ -46,7 +46,9 @@ void init_game(int sd, int client_num) {
         draw_map(); // 맵 그리기
         
         // 플레이어 그리기
-        draw_player(x, y, player_shapes->shapes[current_shape]);
+        draw_player(30, 30, player_shapes->shapes[3]);
+        draw_player(50, 50, player_shapes->shapes[3]);
+        // draw_player(x, y, player_shapes->shapes[current_shape]);
         move_bullets(); // 발사된 총알 이동
         draw_bullets(); // 총알 그리기
 
@@ -71,14 +73,14 @@ void init_game(int sd, int client_num) {
             break;
         }
 
-        // 서버로투버 받은 위치 정보로 다른 플플레이어 그리기
-        char *line = strtok(player_pos, "\n");
-        while (line) {
-            if (sscanf(line, "%d,x=%d,y=%d", &id, &x1, &y1) == 3) {
-                draw_player(x1, y1, player_shapes->shapes[current_shape]);
-            }
-            line = strtok(NULL, "\n");
-        }
+        // // 서버로부터 받은 위치 정보로 다른 플플레이어 그리기
+        // char *line = strtok(player_pos, "\n");
+        // while (line) {
+        //     if (sscanf(line, "%d,x=%d,y=%d", &id, &x1, &y1) == 3) {
+        //         draw_player(x1, y1, player_shapes->shapes[current_shape]);
+        //     }
+        //     line = strtok(NULL, "\n");
+        // }
 
         // 총알 발사
         if (ch == '\n') {
