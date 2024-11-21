@@ -18,8 +18,9 @@ void init_game(int sd, int client_num) {
     // 플레이어의 초기 위치 및 방향
     int x = COLS / 2, y = LINES / 2, player_dir;
     // 데이터 송신을 위한 버퍼
-    char buf[256], player_pos[1024];
+    char buf[50], player_pos[200];
     char ch; // 플레이어가 입력하는 키
+    char *line;
     player_loc all_players[4]; // 4명의 플레이어 위치를 저장
     
     // 플레이어 ID 및 위치를 저장할 변수
@@ -47,6 +48,28 @@ void init_game(int sd, int client_num) {
         
         // 플레이어 그리기
         draw_player(x, y, player_shapes->shapes[current_shape]);
+        // 서버에 플레이어 위치를 전달
+        snprintf(buf, sizeof(buf), "<<game>>x=%d,y=%d", x, y);
+        if (send(sd, buf, sizeof(buf), 0) == -1) {
+            perror("send to server");
+            break;
+        }
+
+        // 서버로부터 다른 플레이어의 위치 수신
+        memset(player_pos, '\0', sizeof(player_pos));
+        if (recv(sd, player_pos, sizeof(player_pos), 0) == -1) {
+            perror("recv from server");
+            break;
+        }
+
+        // 서버로투버 받은 위치 정보로 다른 플플레이어 그리기
+        line = strtok(player_pos, "\n");
+        while (line != NULL) {
+            if (sscanf(line, "%d,x=%d,y=%d", &id, &x1, &y1) == 3) {
+                draw_player(x1, y1, player_shapes->shapes[current_shape]);
+            }
+            line = strtok(NULL, "\n");
+        }
         move_bullets(); // 발사된 총알 이동
         draw_bullets(); // 총알 그리기
 
@@ -57,28 +80,7 @@ void init_game(int sd, int client_num) {
         // 플레이어 이동 및 방향 설정
         move_player(&x, &y, ch, &player_dir);
 
-        // 서버에 플레이어 위치를 전달
-        snprintf(buf, sizeof(buf), "<<game>>x=%d,y=%d", x, y);
-        if (send(sd, buf, sizeof(buf), 0) == -1) {
-            perror("send to server");
-            break;
-        }
-
-        // 서버로부터 다른 플레이어의 위치 수신
-        memset(player_pos, 0, sizeof(player_pos));
-        if (recv(sd, player_pos, sizeof(player_pos), 0) == -1) {
-            perror("recv from server");
-            break;
-        }
-
-        // 서버로투버 받은 위치 정보로 다른 플플레이어 그리기
-        char *line = strtok(player_pos, "\n");
-        while (line) {
-            if (sscanf(line, "%d,x=%d,y=%d", &id, &x1, &y1) == 3) {
-                draw_player(x1, y1, player_shapes->shapes[current_shape]);
-            }
-            line = strtok(NULL, "\n");
-        }
+        
 
         // 총알 발사
         if (ch == '\n') {

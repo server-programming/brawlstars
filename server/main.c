@@ -39,7 +39,7 @@ int cur_player = 0;
 void *threadfunc(void *vargp) {
 	network_player *np = (network_player *)vargp;
 	char buf[50];
-	char player_pos[1024];
+	char player_pos[200];
 	int network_status;
 	int client_x;
 	int client_y;
@@ -80,25 +80,28 @@ void *threadfunc(void *vargp) {
 		
 		// 클라이언트가 게임에 접속하는 경우
 		if (strstr(buf, "<<game>>") != NULL) {
-			memset(buf, '\0', sizeof(buf));
+			printf("%s\n", buf);
 			sscanf(buf, "<<game>>x=%d,y=%d", &client_x, &client_y);
 			np->players[cur_client_num].x = client_x;
 			np->players[cur_client_num].y = client_y;
 			
 			memset(player_pos, '\0', sizeof(player_pos));
 			for(int i=0; i<PLAYER; i++) {
+				memset(buf, '\0', sizeof(buf));
 				if (np->ns[cur_client_num] != 0) {
-					sprintf(buf, "%d,x=%d,y=%d", i, np->players[i].x, np->players[i].y);
+					sprintf(buf, "%d,x=%d,y=%d\n", i, np->players[i].x, np->players[i].y);
 					strcat(player_pos, buf);
 				} else {
 					sprintf(buf, "%d,x=0,y=0", i);
 				}
 			}
 
-			for(int i=0; i<PLAYER; i++) {
-				printf("client %d: x: %d y: %d\n", i, np->players[i].x, np->players[i].y);
-				printf("\n");
-			}
+			//for(int i=0; i<PLAYER; i++) {
+			//	printf("client %d: x: %d y: %d\n", i, np->players[i].x, np->players[i].y);
+			//}
+			//printf("\n");
+
+			printf("%s\n", player_pos);
 
 			if (connection(np->ns[cur_client_num], cur_client_num, player_pos, 2) == 0) {
 				break;
