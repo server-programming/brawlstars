@@ -83,6 +83,7 @@ void init_game(int sd, int client_num) {
         // 총알 발사
         if (ch == '\n') {
             shoot_bullet(x, y, player_dir);
+            play_shoot_sound();
         }
 
         // 플레이어 모양 변경 (디버깅용)
