@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
+#include <wchar.h>
 // 사용자 정의 모듈
 #include "game.h"
 #include "player_shape.h"
@@ -82,6 +83,8 @@ void init_game(int sd, int client_num) {
 
         // 총알 발사
         if (ch == '\n') {
+            //플레이어 길이에 따른 총알 위치 조정
+            wchar_t *current_player_shape = player_shapes->shapes[current_shape]; 
             shoot_bullet(x, y, player_dir);
             play_shoot_sound();
         }
