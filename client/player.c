@@ -19,4 +19,11 @@ void move_player(int *x, int *y, int ch, int *direction) {
     if (old_x != *x || old_y != *y) {
         play_move_sound();
     }
+
+    // 장애물 충돌 검사
+    if (!is_obstacle(x, y)) {
+        *x = x;
+        *y = y;
+    }
+
 }
