@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
+#include <wchar.h>
 // 사용자 정의 모듈
 #include "game.h"
 #include "player_shape.h"
@@ -48,6 +49,7 @@ void init_game(int sd, int client_num) {
         
         // 플레이어 그리기
         draw_player(x, y, player_shapes->shapes[current_shape]);
+
         // 서버에 플레이어 위치를 전달
         snprintf(buf, sizeof(buf), "<<game>>x=%d,y=%d", x, y);
         if (send(sd, buf, sizeof(buf), 0) == -1) {
@@ -62,14 +64,20 @@ void init_game(int sd, int client_num) {
             break;
         }
 
-        // 서버로투버 받은 위치 정보로 다른 플플레이어 그리기
+        // 서버로부터 받은 위치 정보로 다른 플플레이어 그리기
         line = strtok(player_pos, "\n");
         while (line != NULL) {
             if (sscanf(line, "%d,x=%d,y=%d", &id, &x1, &y1) == 3) {
                 draw_player(x1, y1, player_shapes->shapes[current_shape]);
+                // 디버깅용: 다른 플레이어 정보 출력
+                mvprintw(id + 1, 0, "Player %d: x=%d, y=%d", id, x1, y1);
             }
             line = strtok(NULL, "\n");
         }
+
+        // 디버깅용: 현재 플레이어 정보 출력
+        mvprintw(0, 0, "Player: x=%d, y=%d, shape=%d", x, y, current_shape);
+
         move_bullets(); // 발사된 총알 이동
         draw_bullets(); // 총알 그리기
         
@@ -82,12 +90,16 @@ void init_game(int sd, int client_num) {
 
         // 총알 발사
         if (ch == '\n') {
+            //플레이어 길이에 따른 총알 위치 조정
+            wchar_t *current_player_shape = player_shapes->shapes[current_shape]; 
             shoot_bullet(x, y, player_dir);
+            play_shoot_sound();
         }
 
         // 플레이어 모양 변경 (디버깅용)
         // if (ch == 'c') {
         //    current_shape = (current_shape + 1) % MAX_SHAPES;
+        //    mvprintw(LINES - 1, 0, "Shape changed to %d", current_shape);
         // }
 
         // if (ch == 'q') break;

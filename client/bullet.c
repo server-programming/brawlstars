@@ -1,37 +1,102 @@
 #include <ncurses.h>
+#include <wchar.h>
 #include "bullet.h"
+#include "map.h"
 
 // 각 총알 구조체를 관리하기 위한 배열
 Bullet bullets[MAX_BULLETS];
 int bullet_count = 0; // 발사(생성)되어 있는 총알 개수
 
-// 총알 발사
-void shoot_bullet(int x, int y, int direction) {
-    if (bullet_count < MAX_BULLETS) { // 최대 총알 개수 제한
-        Bullet *b = &bullets[bullet_count++]; // 새 총알 생성
-        b->x = x;
-        b->y = y;
-        b->dx = (direction == 1) - (direction == 3); // 오른쪽 1, 왼쪽 -1
-        b->dy = (direction == 2) - (direction == 0); // 아래 1, 위 -1
+// // 총알 발사
+// void shoot_bullet(int x, int y, int direction) {
+//     if (bullet_count < MAX_BULLETS) { // 최대 총알 개수 제한
+//         Bullet *b = &bullets[bullet_count++]; // 새 총알 생성
+//         b->x = x;
+//         b->y = y;
+//         b->dx = (direction == 1) - (direction == 3); // 오른쪽 1, 왼쪽 -1
+//         b->dy = (direction == 2) - (direction == 0); // 아래 1, 위 -1
+//     }
+// }
+
+//^^^^플레이어 길이에 따른 총알 위치를 수정한 shoot_bullet
+void shoot_bullet(int x, int y, int direction, wchar_t *player_shape) {
+    if (bullet_count < MAX_BULLETS) {
+        Bullet *b = &bullets[bullet_count++];
+        
+        // 플레이어 모양의 길이 계산
+        int player_length = wcslen(player_shape);
+        
+        // 방향에 따라 총알의 시작 위치 조정
+        switch (direction) {
+            case 0: // 위
+                b->x = x + player_length / 2;
+                b->y = y - 1;
+                break;
+            case 1: // 오른쪽
+                b->x = x + player_length;
+                b->y = y;
+                break;
+            case 2: // 아래
+                b->x = x + player_length / 2;
+                b->y = y + 1;
+                break;
+            case 3: // 왼쪽
+                b->x = x - 1;
+                b->y = y;
+                break;
+        }
+        
+        b->dx = (direction == 1) - (direction == 3);
+        b->dy = (direction == 2) - (direction == 0);
     }
 }
 
-// 발사된 총알 이동
+// // 발사된 총알 이동
+// void move_bullets() {
+//     for (int i = 0; i < bullet_count; i++) {
+//         bullets[i].x += bullets[i].dx;  // x 좌표 이동
+//         bullets[i].y += bullets[i].dy;  // y 좌표 이동
+
+//         // 화면을 벗어난 총알은 제거
+//         if (bullets[i].x < 0 || bullets[i].x >= COLS || bullets[i].y < 0 || bullets[i].y >= LINES) {
+//             for (int j = i; j < bullet_count - 1; j++) {
+//                 bullets[j] = bullets[j + 1]; // 총알 배열에서 총알 삭제
+//             }
+//             bullet_count--; // 총알 수 감소
+//             i--; // 인덱스를 1 감소
+//         }
+//     }
+// }
+
+//^^^^장애물 출동검사를 추가한 move_bullets
 void move_bullets() {
     for (int i = 0; i < bullet_count; i++) {
-        bullets[i].x += bullets[i].dx;  // x 좌표 이동
-        bullets[i].y += bullets[i].dy;  // y 좌표 이동
-
-        // 화면을 벗어난 총알은 제거
-        if (bullets[i].x < 0 || bullets[i].x >= COLS || bullets[i].y < 0 || bullets[i].y >= LINES) {
+        int new_x = bullets[i].x + bullets[i].dx;
+        int new_y = bullets[i].y + bullets[i].dy;
+        
+        // 장애물 충돌 검사
+        if (is_obstacle(new_x, new_y)) {
+            // 총알이 장애물에 부딪히면 제거
             for (int j = i; j < bullet_count - 1; j++) {
-                bullets[j] = bullets[j + 1]; // 총알 배열에서 총알 삭제
+                bullets[j] = bullets[j + 1];
             }
-            bullet_count--; // 총알 수 감소
-            i--; // 인덱스를 1 감소
+            bullet_count--;
+            i--;
+        } else if (new_x < 0 || new_x >= COLS || new_y < 0 || new_y >= LINES) {
+            // 화면을 벗어난 총알 제거
+            for (int j = i; j < bullet_count - 1; j++) {
+                bullets[j] = bullets[j + 1];
+            }
+            bullet_count--;
+            i--;
+        } else {
+            // 총알 이동
+            bullets[i].x = new_x;
+            bullets[i].y = new_y;
         }
     }
 }
+
 
 // 발사된 총알 그리기
 void draw_bullets() {

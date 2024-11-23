@@ -1,6 +1,9 @@
 #include <SDL2/SDL_mixer.h>
 #include "background_music.h"
 
+Mix_Chunk *shoot_sound = NULL;
+Mix_Chunk *move_sound = NULL;
+
 // 배경 음악 시작
 void play_background_music(const char *music_file) {
     // 현재 음악이 재생 중이 아닌 경우에 실행
@@ -21,3 +24,19 @@ void stop_background_music() {
     Mix_HaltMusic(); 
 }
 
+void init_sound_effects() {
+    shoot_sound = Mix_LoadWAV("../audio_files/shoot_sound.wav");
+    move_sound = Mix_LoadWAV("../audio_files/move_sound.wav");
+}
+
+void play_shoot_sound() {
+    if (shoot_sound) {
+        Mix_PlayChannel(-1, shoot_sound, 0);
+    }
+}
+
+void play_move_sound() {
+    if (move_sound) {
+        Mix_PlayChannel(-1, move_sound, 0);
+    }
+}
