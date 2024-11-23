@@ -7,18 +7,16 @@
 Bullet bullets[MAX_BULLETS];
 int bullet_count = 0; // 발사(생성)되어 있는 총알 개수
 
-// // 총알 발사
-// void shoot_bullet(int x, int y, int direction) {
-//     if (bullet_count < MAX_BULLETS) { // 최대 총알 개수 제한
-//         Bullet *b = &bullets[bullet_count++]; // 새 총알 생성
-//         b->x = x;
-//         b->y = y;
-//         b->dx = (direction == 1) - (direction == 3); // 오른쪽 1, 왼쪽 -1
-//         b->dy = (direction == 2) - (direction == 0); // 아래 1, 위 -1
-//     }
-// }
+// 총알의 충돌을 확인
+int is_bullet_collision(int x, int y) {
+    if (is_bullet_blocked(x, y)) { // 총알이 벽에 가로막혔을 경우
+        return 1; // 1을 반환
+    }
+    return 0; // 총알의 충돌이 없었을 경우 0을 반환
+}
 
-//^^^^플레이어 길이에 따른 총알 위치를 수정한 shoot_bullet
+
+// 플레이어의 크기를 고려한 총알 발사
 void shoot_bullet(int x, int y, int direction, wchar_t *player_shape) {
     if (bullet_count < MAX_BULLETS) {
         Bullet *b = &bullets[bullet_count++];
@@ -51,39 +49,21 @@ void shoot_bullet(int x, int y, int direction, wchar_t *player_shape) {
     }
 }
 
-// // 발사된 총알 이동
-// void move_bullets() {
-//     for (int i = 0; i < bullet_count; i++) {
-//         bullets[i].x += bullets[i].dx;  // x 좌표 이동
-//         bullets[i].y += bullets[i].dy;  // y 좌표 이동
-
-//         // 화면을 벗어난 총알은 제거
-//         if (bullets[i].x < 0 || bullets[i].x >= COLS || bullets[i].y < 0 || bullets[i].y >= LINES) {
-//             for (int j = i; j < bullet_count - 1; j++) {
-//                 bullets[j] = bullets[j + 1]; // 총알 배열에서 총알 삭제
-//             }
-//             bullet_count--; // 총알 수 감소
-//             i--; // 인덱스를 1 감소
-//         }
-//     }
-// }
-
-//^^^^장애물 출동검사를 추가한 move_bullets
-void move_bullets() {
+void move_bullets(int player_x, int player_y, wchar_t *player_shape) {
     for (int i = 0; i < bullet_count; i++) {
         int new_x = bullets[i].x + bullets[i].dx;
         int new_y = bullets[i].y + bullets[i].dy;
-        
-        // 장애물 충돌 검사
-        if (is_obstacle(new_x, new_y)) {
-            // 총알이 장애물에 부딪히면 제거
+
+        int collision = is_bullet_collision(new_x, new_y);
+
+        if (collision == 1) { // 장애물 충돌
             for (int j = i; j < bullet_count - 1; j++) {
                 bullets[j] = bullets[j + 1];
             }
             bullet_count--;
             i--;
         } else if (new_x < 0 || new_x >= COLS || new_y < 0 || new_y >= LINES) {
-            // 화면을 벗어난 총알 제거
+            // 화면 밖으로 나간 총알 제거
             for (int j = i; j < bullet_count - 1; j++) {
                 bullets[j] = bullets[j + 1];
             }
@@ -96,6 +76,7 @@ void move_bullets() {
         }
     }
 }
+
 
 
 // 발사된 총알 그리기

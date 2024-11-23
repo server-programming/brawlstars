@@ -47,6 +47,11 @@ void init_game(int sd, int client_num) {
 
         draw_map(); // 맵 그리기
         
+        ch = getch(); // 키 입력
+        
+        // 플레이어 이동 및 방향 설정
+        move_player(&x, &y, ch, &player_dir, player_shapes->shapes[current_shape]);
+
         // 플레이어 그리기
         draw_player(x, y, player_shapes->shapes[current_shape]);
 
@@ -69,40 +74,28 @@ void init_game(int sd, int client_num) {
         while (line != NULL) {
             if (sscanf(line, "%d,x=%d,y=%d", &id, &x1, &y1) == 3) {
                 draw_player(x1, y1, player_shapes->shapes[current_shape]);
-                // 디버깅용: 다른 플레이어 정보 출력
-                mvprintw(id + 1, 0, "Player %d: x=%d, y=%d", id, x1, y1);
             }
             line = strtok(NULL, "\n");
         }
-
-        // 디버깅용: 현재 플레이어 정보 출력
-        mvprintw(0, 0, "Player: x=%d, y=%d, shape=%d", x, y, current_shape);
 
         move_bullets(); // 발사된 총알 이동
         draw_bullets(); // 총알 그리기
         
         refresh();
 
-        ch = getch(); // 키 입력
-
-        // 플레이어 이동 및 방향 설정
-        move_player(&x, &y, ch, &player_dir);
-
         // 총알 발사
         if (ch == '\n') {
             //플레이어 길이에 따른 총알 위치 조정
             wchar_t *current_player_shape = player_shapes->shapes[current_shape]; 
-            shoot_bullet(x, y, player_dir);
+            shoot_bullet(x, y, player_dir, current_player_shape);
             play_shoot_sound();
         }
 
         // 플레이어 모양 변경 (디버깅용)
-        // if (ch == 'c') {
-        //    current_shape = (current_shape + 1) % MAX_SHAPES;
-        //    mvprintw(LINES - 1, 0, "Shape changed to %d", current_shape);
-        // }
-
-        // if (ch == 'q') break;
+        if (ch == 'c') {
+            current_shape = (current_shape + 1) % MAX_SHAPES;
+            mvprintw(LINES - 1, 0, "Shape changed to %d", current_shape);
+        }
 
         napms(10); // 게임의 프레임 레이트 조정 
     }

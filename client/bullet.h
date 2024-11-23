@@ -10,8 +10,10 @@ typedef struct {
     int dx, dy; // 총알 이동 방향
 } Bullet;
 
-void shoot_bullet(int x, int y, int direction); // 총알 발사
-void move_bullets(void); // 발사된 총알 이동
+void shoot_bullet(int x, int y, int direction, wchar_t* player_shape); // 총알 발사
+void move_bullets(int player_x, int player_y, wchar_t* player_shape); // 발사된 총알 이동
 void draw_bullets(void); // 발사된 총알 그리기
+int is_bullet_collision(int x, int y); // 총알 충돌 검사
 
 #endif
+

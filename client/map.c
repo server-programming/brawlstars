@@ -21,17 +21,16 @@ void init_map() {
         }
     }
 
-   // 내부 장애물 추가
-    int num_obstacles = (MAP_HEIGHT * MAP_WIDTH) / 20; // 맵 크기의 5% 정도를 장애물로 채움
-    for (int i = 0; i < num_obstacles; i++) {
-        int x, y;
-        do {
-            x = rand() % (MAP_WIDTH - 2) + 1;
-            y = rand() % (MAP_HEIGHT - 2) + 1;
-        } while (map[y][x] != EMPTY_CHAR);
-        map[y][x] = OBSTACLE_CHAR;
-    }
-
+    // 내부 장애물 추가
+    // int num_obstacles = (MAP_HEIGHT * MAP_WIDTH) / 20; // 맵 크기의 5% 정도를 장애물로 채움
+    // for (int i = 0; i < num_obstacles; i++) {
+        // int x, y;
+        // do {
+            // x = rand() % (MAP_WIDTH - 2) + 1;
+            // y = rand() % (MAP_HEIGHT - 2) + 1;
+        // } while (map[y][x] != EMPTY_CHAR);
+        // map[y][x] = OBSTACLE_CHAR;
+    // }
 }
 
 // 맵 그리기 함수
@@ -51,7 +50,48 @@ void draw_map() {
     refresh(); // 화면 갱신
 }
 
-//장애물 충돌 검사: 외곽선, 장애물을 obstacle로 처리
-int is_obstacle(int x, int y) {
-    return map[y][x] == OBSTACLE_CHAR;
+// 플레이어-맵 충돌 확인 함수
+int is_player_blocked(int x, int y, wchar_t* player_shape) {
+    int length = wcslen(player_shape); // 플레이어 모양 길이 계산
+
+    // 화면 좌표를 맵 좌표로 변환
+    int map_x = x - (COLS - MAP_WIDTH) / 2;
+    int map_y = y - (LINES - MAP_HEIGHT) / 2;
+
+    // 플레이어가 차지하는 가로 영역 확인
+    for (int i = 0; i < length; i++) {
+        int check_x = map_x + i;
+
+        // 맵 경계 초과 확인
+        if (check_x < 0 || check_x >= MAP_WIDTH || map_y < 0 || map_y >= MAP_HEIGHT) {
+            return 1; // 경계를 벗어나면 장애물로 간주
+        }
+
+        // 장애물 확인
+        if (map[map_y][check_x] == OBSTACLE_CHAR) {
+            return 1; // 장애물 발견
+        }
+    }
+
+    return 0; // 충돌 없음
 }
+
+// 총알-맵 충돌 확인 함수
+int is_bullet_blocked(int x, int y) {
+    // 화면 좌표를 맵 좌표로 변환
+    int map_x = x - (COLS - MAP_WIDTH) / 2;
+    int map_y = y - (LINES - MAP_HEIGHT) / 2;
+
+    // 맵 경계 초과 확인
+    if (map_x < 0 || map_x >= MAP_WIDTH || map_y < 0 || map_y >= MAP_HEIGHT) {
+        return 1; // 경계를 벗어나면 충돌로 간주
+    }
+
+    // 장애물 확인
+    if (map[map_y][map_x] == OBSTACLE_CHAR) {
+        return 1; // 장애물이 있으면 충돌
+    }
+
+    return 0; // 충돌 없음
+}
+
