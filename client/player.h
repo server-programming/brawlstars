@@ -5,6 +5,11 @@ typedef struct {
     int x, y; // 플레이어 좌표
 } player_loc;
 
+typedef sturct {
+    player_loc ploc;
+    int hp = 3;
+} player;
+
 void draw_player(int x, int y, wchar_t *player_shape); // 플레이어 그리기
 void move_player(int *x, int *y, int ch, int *direction); // 플레이어 이동
 

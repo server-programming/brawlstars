@@ -72,8 +72,8 @@ void init_game(int sd, int client_num) {
         }
         move_bullets(); // 발사된 총알 이동
         draw_bullets(); // 총알 그리기
-
-        refresh(); // 화면 갱신
+        
+        refresh();
 
         ch = getch(); // 키 입력
 
