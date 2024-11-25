@@ -23,7 +23,7 @@
 #include "help.h"
 
 // 서버와 통신할 포트 번호 설정
-#define PORTNUM 9001
+#define PORTNUM 12312
 // 타임아웃 시간(초)
 #define TIMEOUT_SEC 1
 
@@ -114,8 +114,8 @@ int main() {
 	while (1) {
 		start_menu(&selected_mode); // 시작 메뉴 표시 및 모드 선택
 		if (selected_mode == 1) { // 게임 시작
-			// lobby(sd, client_num);
-			init_game(sd, client_num);
+			lobby(sd, client_num);
+            // init_game(sd, client_num);
 		} else if (selected_mode == 2) { // 도움말 표시
 			help();
 		} else if (selected_mode == 3) { // 종료

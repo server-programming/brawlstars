@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include <pthread.h>
 
-#define PORTNUM 9001
+#define PORTNUM 12312
 #define MAX_THREAD 100
 #define PLAYER 4
 
@@ -70,7 +70,7 @@ void *threadfunc(void *vargp) {
 
 		// 클라이언트가 로비에 접속하는 경우 동접자 수를 늘린다
 		// 서버는 동접자 수를 전송한다
-		if (strstr(buf, "<<lobby>>") != NULL) {
+		if (strstr(buf, "<<concurrent_users>>") != NULL) {
 			memset(buf, '\0', sizeof(buf));
 			sprintf(buf, "%d", cur_player);
 			if (connection(np->ns[cur_client_num], cur_client_num, buf, 1) == 0) {

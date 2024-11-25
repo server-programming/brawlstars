@@ -11,92 +11,145 @@
 #include <sys/time.h>
 // 사용자 정의 모듈
 #include "lobby.h"
+#include "game.h"
+#include "player_shape.h"
 #include "text_align.h"
+#include "request.h"
 #include "ping_time.h"
 
-// 동시 접속자 수 출력
-void print_concurrent_users(int concurrent_users, long long ping) {
-    // int concurrent_users = 1;
-    // struct timeval start, end;
-    
-    // 응답 시간 측정 시작
-    // gettimeofday(&start, NULL);   
-    // int concurrent_users = get_concurrent_users(sd); // 동시 접속자 수 저장
-    // 응답 시간 측정 종료
-    // gettimeofday(&end, NULL);
-    
-    // long long ping = get_ms(start, end);     
-    
-    // 동시 접속자 수 출력 형식 지정
+// 입력을 받아서 캐릭터 선택, 게임 매칭 시작 또는 종료 처리
+int get_input_and_process(int *selected_skin, int *is_matching) {
+    int ch;
+
+    ch = getch();
+
+    // 숫자 입력 (캐릭터 선택)
+    if (ch >= '1' && ch <= '9') {
+        *selected_skin = ch - '1';  // 선택된 캐릭터 저장
+        return 1;  // 캐릭터 선택 완료
+    }
+    // Enter 키 (게임 매칭 시작 또는 취소)
+    else if (ch == 10) {
+        if (*is_matching) {
+            *is_matching = 0;  // 이미 매칭 중이라면 매칭 취소
+            return 4;  // 매칭 취소
+        } else {
+            *is_matching = 1;  // 매칭 시작
+            return 2;  // 매칭 시작
+        }
+    }
+    // ESC 키 (게임 종료)
+    else if (ch == 27) {
+        return 3;  // 게임 종료
+    }
+
+    return 0;  // 다른 키 입력 시 아무 동작도 하지 않음
+}
+
+// 게임 대기 화면과 매칭 처리
+void lobby(int sd, int client_num) {
+    int concurrent_users = -1; // 동접자 수
+    int is_matching = 0; // 매칭 중인지 여부
+    int is_matched = 0; // 게임 매칭 여부
+    struct timeval start, end; // 응답 측정 시작 시간, 응답 측정 종료 시간
+    long long ping;
+    int selected_skin = 0;
+
+    // ncurses 설정: 입력된 키를 화면에 출력하지 않음
+    noecho();
+
+    while (1) {
+        // 응답 속도 측정
+        gettimeofday(&start, NULL);
+        concurrent_users = get_concurrent_users(sd); // 동접자 수 저장
+        gettimeofday(&end, NULL); // 응답 속도 측정 종료
+        ping = get_ms(start, end); // 핑 계산
+
+        // 화면을 지우지 않고 갱신
+        clear(); // 화면을 지운 후에 계속해서 출력되도록 할 수 있습니다.
+
+        // 스킨 선택
+        mvprintw(5, COLS / 2 - 10, "스킨을 선택해보세요: ");
+        PlayerShape *player_shapes = get_player_shape();
+        int x_position = COLS / 4;  // 시작 위치
+
+        for (int i = 0; i < MAX_SHAPES; i++) {
+            mvprintw(14, x_position + i * 8, "%d", i + 1);  // 숫자
+            mvprintw(15, x_position + i * 8, "%ls", player_shapes->shapes[i]);  // 캐릭터 모양
+        }
+
+        mvprintw(LINES - 2, COLS / 2 - 10, "(1-%d)번을 눌러 선택", MAX_SHAPES);
+
+        // 선택된 캐릭터 출력 (선택이 있을 때마다 갱신)
+        print_selected_skin(selected_skin);
+
+        // 입력 받아 처리
+        int input_result = get_input_and_process(&selected_skin, &is_matching);
+
+        // 캐릭터 선택된 경우
+        if (input_result == 1) {
+            // 캐릭터가 선택되면 화면에 계속 유지됨
+            print_selected_skin(selected_skin);  // 선택된 캐릭터 출력
+        }
+        // 매칭 시작 또는 취소 처리
+        else if (input_result == 2) {
+            while (1) {
+                gettimeofday(&start, NULL);
+                is_matched = 0; // 서버에서 매칭이 아직 안 됨
+                gettimeofday(&end, NULL);
+                ping = get_ms(start, end);
+
+                // 매칭 대기 중일 때 화면을 갱신하고 계속 입력받을 수 있도록 변경
+                if (is_matched == 0) {
+                    break; // 매칭 대기 상태에서 빠져나오기 위해 while문을 탈출
+                }
+
+                if (is_matched == 1) {
+                    init_game(sd, client_num); // 게임 시작
+                    break;
+                }
+            }
+        }
+        // 매칭 취소
+        else if (input_result == 4) {
+            is_matching = 0; // 매칭 취소 상태로 되돌리기
+        }
+        // 게임 종료
+        else if (input_result == 3) {
+            break; // 게임 종료 (ESC)
+        }
+
+        // 동접자 수와 매칭 여부 출력
+        if (concurrent_users == -1) { // 동접자 수를 가져오지 못한 경우
+            mvprintw(10, COLS / 2 - 10, "Failed to get concurrent users.");
+        } else {
+            print_lobby_status(concurrent_users, ping, is_matching); // 상태 출력
+        }
+
+        refresh(); // 화면 갱신
+        sleep(1);
+    }
+}
+
+// 게임 대기열 상태 출력 함수
+void print_lobby_status(int concurrent_users, long long ping, int is_matching) {
+    // 동시 접속자 수 출력
     wchar_t wstr[50];
     swprintf(wstr, sizeof(wstr) / sizeof(wchar_t), L"동접자 수: %d \t 핑: %ldms", concurrent_users, ping);
+    center_text(10, COLS, wstr);
 
-    // 화면 중앙에 동시 접속자 수 출력 
-    center_text(10, COLS, wstr); 
-    return;
+    // 매칭 상태 출력
+    const wchar_t* matching_status = is_matching ? L"매칭 중... (Enter를 눌러 취소)" : L"매칭 시작 (Enter를 눌러 시작)";
+    center_text(12, COLS, matching_status);
 }
 
-// 동시 접속자 수 반환
-// int get_concurrent_users(int sd) {
-   //  int concurrent_users = -1;
-
-    // const char* request = "GET_CONCURRENT_USERS"; // 동시 접속자 수 확인 요청
-    // if (send(sd, request, strlen(request), 0) < 0) {
-    //    perror("Error sending request to server");
-    //    return -1;
-    //}    
-
-    //char buffer[256]; // 서버로부터 동시 접속자 수 응답 수신
-    //if (recv(sd, buffer, sizeof(buffer) - 1, 0) < 0) {
-    //    perror("Error receiving reposne from server");
-    //    return -1;
-    //}
-    
-    // 문자열로 받은 동시 접속자 수를 정수로 변환
-    //concurrent_users = atoi(buffer);
-    //return concurrent_users; // 동시 접속자 수 반환
-//}
-
-// 도움말 화면을 표시하며, ESC 키를 누를 때까지 대기
-void lobby(int sd, int client_num) {
-	
-	int concurrent_users;
-	char buf[50];
-	struct timeval start, end;
-
-	while(1) {
-		memset(buf, '\0', sizeof(buf));
-		sprintf(buf, "<<lobby>>");
-
-		// 응답 속도 측정
-		gettimeofday(&start, NULL);
-		if (send(sd, buf, sizeof(buf), 0) == -1) {
-			perror("send");
-			exit(1);
-		}
-		memset(buf, '\0', sizeof(buf));
-		if (recv(sd, buf, sizeof(buf), 0) == -1) {
-			perror("recv");
-			exit(1);
-		}
-
-		// 응답 속도 측정 종료
-		gettimeofday(&end, NULL);
-
-		concurrent_users = atoi(buf);
-		long long ping = get_ms(start, end);
-
-		clear(); // 화면 지우기
-		print_concurrent_users(concurrent_users, ping); // 동접자 수 출력
-		refresh(); // 화면 갱신
-
-		int ch = getch(); // 사용자 입력 받기
-		
-		// ESC(27) 키가 눌리면 메인 메뉴로 돌아가기
-		if (ch == 27) { // 
-			break;
-		}
-
-		sleep(1); // 1초 대기
-	}
+// 선택된 캐릭터 출력 함수
+void print_selected_skin(int selected_skin) {
+    PlayerShape *player_shapes = get_player_shape();
+    if (selected_skin >= 0 && selected_skin < MAX_SHAPES) {
+        // 선택된 캐릭터를 화면에 출력
+        mvprintw(LINES - 4, COLS / 2 - 10, "선택한 캐릭터: ");
+        mvprintw(LINES - 3, COLS / 2 - 10, "%ls", player_shapes->shapes[selected_skin]);
+    }
 }
+
