@@ -9,7 +9,7 @@ int get_concurrent_users(int sd) {
     
     // 서버에게 동접자 수 요청
     memset(buf, '\0', sizeof(buf));
-    sprintf(buf, "<<concurrent_users>>");
+    sprintf(buf, "GET_CONCURRENT_USER");
     if (send(sd, buf, sizeof(buf), 0) == -1) {
         perror("send");
         return -1;
@@ -32,7 +32,7 @@ int get_is_matched(int sd) {
     
     // 서버에게 대기열 유저 수 요청
     memset(buf, '\0', sizeof(buf));
-    sprintf(buf, "<<is_matched>>");
+    sprintf(buf, "GET_READY_USER");
     if (send(sd, buf, sizeof(buf), 0) == -1) {
         perror("send");
         return -1;

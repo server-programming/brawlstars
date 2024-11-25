@@ -58,7 +58,7 @@ void init_game(int sd, int client_num, int selected_skin) {
         move_player(player, ch);
         shoot_bullet(player->x, player->y, player->dir, player->skin, ch);
         // 서버에 플레이어 위치 및 상태 전달 (스킨을 정수형 인덱스로 보냄)
-        snprintf(buf, sizeof(buf), "<<player>>x=%d,y=%d,skin=%d,hp=%d,is_dead=%d", player->x, player->y, selected_skin, player->hp, player->is_dead);
+        snprintf(buf, sizeof(buf), "ACCESS_TO_GAME,x=%d,y=%d,skin=%d,hp=%d,is_dead=%d", player->x, player->y, selected_skin, player->hp, player->is_dead);
         if (send(sd, buf, sizeof(buf), 0) == -1) {
             perror("send to server");
             break;

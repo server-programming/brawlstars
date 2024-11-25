@@ -90,7 +90,7 @@ network network_connect() {
 
 	// 서버에게 연결되었으므로 클라이언트 번호를 요구한다
 	memset(buf, '\0', sizeof(buf));
-	sprintf(buf, "<<connect>>");
+	sprintf(buf, "GET_CLIENT_UNIQUE_NUM");
 	if (send(sd, buf, sizeof(buf), 0) == -1) {
 		perror("send");
 		exit(1);
@@ -110,6 +110,7 @@ network network_connect() {
 	nt.sin = sin;
 	nt.sd = sd;
 	nt.client_num = client_num;
-
+	
+	printf("test\n");
 	return nt;
 }
