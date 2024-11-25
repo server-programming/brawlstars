@@ -7,9 +7,13 @@
 #include <wchar.h>
 // 네트워크 모듈
 #include <sys/socket.h>
+// 오디오 모듈
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_mixer.h>
 // 시스템 모듈
 #include <sys/time.h>
 // 사용자 정의 모듈
+#include "background_music.h"
 #include "lobby.h"
 #include "game.h"
 #include "player_shape.h"
@@ -55,8 +59,14 @@ void lobby(int sd, int client_num) {
     long long ping;
     int selected_skin = 0;
 
-    // ncurses 설정: 입력된 키를 화면에 출력하지 않음
-    noecho();
+    // 오디오 초기화
+    if (SDL_Init(SDL_INIT_AUDIO) < 0 || Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+        perror("SDL or Mix_OpenAudio failed");
+        return;
+    }
+    
+    // 배경 음악 재생
+    play_background_music("../audio_files/metallic_madness_zone_act_2.mp3");
 
     while (1) {
         // 응답 속도 측정
@@ -69,7 +79,6 @@ void lobby(int sd, int client_num) {
         clear(); // 화면을 지운 후에 계속해서 출력되도록 할 수 있습니다.
 
         // 스킨 선택
-        mvprintw(5, COLS / 2 - 10, "스킨을 선택해보세요: ");
         PlayerShape *player_shapes = get_player_shape();
         int x_position = COLS / 4;  // 시작 위치
 
@@ -95,7 +104,7 @@ void lobby(int sd, int client_num) {
         else if (input_result == 2) {
             while (1) {
                 gettimeofday(&start, NULL);
-                is_matched = 0; // 서버에서 매칭이 아직 안 됨
+                is_matched = 1; // 서버에서 매칭이 아직 안 됨
                 gettimeofday(&end, NULL);
                 ping = get_ms(start, end);
 
@@ -104,7 +113,8 @@ void lobby(int sd, int client_num) {
                     break; // 매칭 대기 상태에서 빠져나오기 위해 while문을 탈출
                 }
 
-                if (is_matched == 1) {
+                if (is_matched == 1) {                    
+                    stop_background_music(); // 배경 음악 중지 
                     init_game(sd, client_num); // 게임 시작
                     break;
                 }
