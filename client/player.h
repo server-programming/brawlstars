@@ -7,7 +7,7 @@ typedef struct {
     wchar_t* skin; // 플레이어 스킨
     int hp; // 플레이어 체력
     int is_dead; // 사망 여부
-    int num; // 플레이어 번호
+    int id; // 플레이어 번호
     int rank; // 플레이어 체력
 } Player;
 

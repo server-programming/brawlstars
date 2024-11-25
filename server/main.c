@@ -15,6 +15,9 @@
 typedef struct player {
         int x;
         int y;
+        int skin;
+		int hp;
+		int is_dead;
 } player;
 
 typedef struct network_player {
@@ -43,6 +46,9 @@ void *threadfunc(void *vargp) {
 	int network_status;
 	int client_x;
 	int client_y;
+	int client_skin;
+	int client_hp;
+	int client_is_dead;
 	int cur_client_num = np->cur_client;
 	int ns = np->ns[cur_client_num];
 
@@ -79,17 +85,20 @@ void *threadfunc(void *vargp) {
 		}
 		
 		// 클라이언트가 게임에 접속하는 경우
-		if (strstr(buf, "<<game>>") != NULL) {
+		if (strstr(buf, "<<player>>") != NULL) {
 			printf("%s\n", buf);
-			sscanf(buf, "<<game>>x=%d,y=%d", &client_x, &client_y);
+			sscanf(buf, "<<player>>x=%d,y=%d,skin=%d,hp=%d,is_dead=%d", &client_x, &client_y, &client_skin, &client_hp, &client_is_dead);
 			np->players[cur_client_num].x = client_x;
 			np->players[cur_client_num].y = client_y;
+			np->players[cur_client_num].skin = client_skin;
+			np->players[cur_client_num].hp = client_hp;
+			np->players[cur_client_num].is_dead = client_is_dead;
 			
 			memset(player_pos, '\0', sizeof(player_pos));
 			for(int i=0; i<PLAYER; i++) {
 				memset(buf, '\0', sizeof(buf));
 				if (np->ns[cur_client_num] != 0) {
-					sprintf(buf, "%d,x=%d,y=%d\n", i, np->players[i].x, np->players[i].y);
+					sprintf(buf, "%d,x=%d,y=%d,skin=%d,hp=%d,is_dead=%d\n", i, np->players[i].x, np->players[i].y, np->players[i].skin, np->players[i].hp, np->players[i].is_dead);
 					strcat(player_pos, buf);
 				} else {
 					sprintf(buf, "%d,x=0,y=0", i);
