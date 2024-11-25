@@ -115,7 +115,7 @@ void lobby(int sd, int client_num) {
 
                 if (is_matched == 1) {                    
                     stop_background_music(); // 배경 음악 중지 
-                    init_game(sd, client_num); // 게임 시작
+                    init_game(sd, client_num, selected_skin); // 게임 시작
                     break;
                 }
             }
