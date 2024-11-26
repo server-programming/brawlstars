@@ -2,8 +2,11 @@
 #include <stdlib.h>
 #include <ncurses.h>
 #include <wchar.h>
+// player.c 함수 프로토타입 선언
 #include "player.h"
+// is_player_blocked (플레이어가 벽에 충돌하였는가 여부 반환)
 #include "map.h"
+// 추후 수정 예정
 #include "bullet.h"
 
 // 플레이어 초기화 함수
