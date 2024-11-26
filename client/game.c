@@ -1,15 +1,25 @@
-#include <ncurses.h>
+// 기본 모듈
+#include <ncurses.h> // 게임 츨력
 #include <stdlib.h>
 #include <string.h>
+// 시간 측정
 #include <time.h>
+// send/recv
 #include <sys/socket.h>
+// 오디오 재생
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
+// player 구조체, move_player, draw_player
 #include "player.h"
+// play_background_music
 #include "background_music.h"
+// draw_map()
 #include "map.h"
+// bullet 구조체, move_bullet, draw_bullet, shoot_bullet
 #include "bullet.h"
+// player skin 구조체 정의
 #include "player_shape.h"
+// game.c 함수 프로토타입 정의
 #include "game.h"
 
 #define MAX_PLAYERS 4
