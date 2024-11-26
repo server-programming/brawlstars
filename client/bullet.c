@@ -1,8 +1,11 @@
 #include <ncurses.h>
 #include <wchar.h>
 #include <string.h>
+// send/recv
 #include <sys/socket.h>
+// bullet.c 함수 프로토타입 정의
 #include "bullet.h"
+// is_bullet_blocked
 #include "map.h"
 
 // 각 총알 구조체를 관리하기 위한 배열
