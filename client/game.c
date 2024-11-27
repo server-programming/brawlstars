@@ -9,7 +9,7 @@
 // 오디오 재생
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
-// player 구조체, move_player, draw_player
+// player 구조체, move_player, draw_player, draw_player_hp
 #include "player.h"
 // play_background_music
 #include "background_music.h"
@@ -135,7 +135,7 @@ void init_game(int sd, int client_num, int selected_skin) {
         napms(10); 
     }
 
-    lobby(sd, client_num); // 게임 루프 종료 시 로비 화면으로 돌아감
+    // lobby(sd, client_num); // 게임 루프 종료 시 로비 화면으로 돌아감
 }
 
 

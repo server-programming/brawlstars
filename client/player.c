@@ -54,7 +54,7 @@ void move_player(Player* player, int ch) {
         player->x = old_x;
         player->y = old_y;
     } else {
-        play_move_sound();
+        // play_move_sound();
     }
 }
 

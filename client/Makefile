@@ -8,7 +8,13 @@ OBJ=$(SRC:.c=.o)
 EXEC=brawlstars
 
 $(EXEC): $(OBJ)
-	$(CC) $(OBJ) -o $(EXEC) $(LDFLAGS)
+	$(CC) player.o game.o $(filter-out player.o game.o,$(OBJ)) -o $(EXEC) $(LDFLAGS)
+
+player.o: player.c player.h
+	$(CC) $(CFLAGS) -c player.c
+
+game.o: game.c game.h player.h
+	$(CC) $(CFLAGS) -c game.c
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $<
