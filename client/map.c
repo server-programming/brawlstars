@@ -25,22 +25,22 @@ void init_map() {
     // 중앙 장애물
     for (int y = 8; y < 13; y++) {
         for (int x = 27; x < 34; x++) {
-            map[y][x] = OBSTACLE;
+            map[y][x] = OBSTACLE_CHAR;
         }
     }
 
     // 코너 장애물
     for (int i = 2; i < 6; i++) {
-        map[i][i] = OBSTACLE;
-        map[i][MAP_WIDTH-1-i] = OBSTACLE;
-        map[MAP_HEIGHT-1-i][i] = OBSTACLE;
-        map[MAP_HEIGHT-1-i][MAP_WIDTH-1-i] = OBSTACLE;
+        map[i][i] = OBSTACLE_CHAR;
+        map[i][MAP_WIDTH-1-i] = OBSTACLE_CHAR;
+        map[MAP_HEIGHT-1-i][i] = OBSTACLE_CHAR;
+        map[MAP_HEIGHT-1-i][MAP_WIDTH-1-i] = OBSTACLE_CHAR;
     }
 
     // 측면 장애물
     for (int y = 5; y < MAP_HEIGHT - 5; y++) {
-        map[y][10] = OBSTACLE;
-        map[y][MAP_WIDTH-11] = OBSTACLE;
+        map[y][10] = OBSTACLE_CHAR;
+        map[y][MAP_WIDTH-11] = OBSTACLE_CHAR;
     }
 }
 
