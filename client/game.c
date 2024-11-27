@@ -124,7 +124,7 @@ void init_game(int sd, int client_num, int selected_skin) {
         // move_bullets(player->x, player->y, player->skin, sd);
 
         if (player->is_dead){
-            //사망 화면 전환
+            draw_game_over_screen(); //게임 오버 스크린 띄움
             break;
         }
 
@@ -134,5 +134,43 @@ void init_game(int sd, int client_num, int selected_skin) {
         refresh();
         napms(10); 
     }
+
+    lobby(sd, client_num); // 게임 루프 종료 시 로비 화면으로 돌아감
 }
 
+
+void draw_game_over_screen() {
+    clear();  // 사망 시 화면을 완전히 지움
+    
+    const char *game_over_art[] = {
+        "                                                   ",
+        "                                                   ",
+        " ####   ##   #    # ####    ###  ##   # #### ####  ",
+        "###     ##   ##  ## ##     ##  # ##   # ##   ##  # ",
+        "##     # ##  ###### ##     ##  # ##  ## ##   ##  # ",
+        "##  #  # ##  ###### ####   ##  #  ## #  #### ####  ",
+        "##  # ###### # # ## ##     ##  #  ####  ##   ## #  ",
+        "### # #   ## # # ## ##     ##  #   ##   ##   ##  # ",
+        " #### #   ## #   ## ####    ###    ##   #### ##  # ",
+        "                                                   ",
+        "                                                   ",
+        "",
+        "Press 'r' to return to lobby",
+        NULL
+    };
+    
+    //여기쯤 게임 오버 화면에 플레이어 순위를 띄우면 좋을 것 같아요. -> 추후 구현
+
+    int start_y = (LINES - 13) / 2;
+    for (int i = 0; game_over_art[i] != NULL; i++) {
+        mvprintw(start_y + i, (COLS - strlen(game_over_art[i])) / 2, "%s", game_over_art[i]);
+    }
+
+    refresh();  // 화면 갱신
+
+    // 'r' 키 입력을 기다림
+    int ch;
+    while ((ch = getch()) != 'r') {
+        // 'r' 키가 아닌 다른 키 입력은 무시
+    }
+}
