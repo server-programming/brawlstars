@@ -13,12 +13,19 @@
 // 시스템 모듈
 #include <sys/time.h>
 // 사용자 정의 모듈
+// play_background_music
 #include "background_music.h"
+// lobby.c 함수 프로토타입 선언
 #include "lobby.h"
+// init_game
 #include "game.h"
+// player skin 구조체
 #include "player_shape.h"
+// center_text (텍스트를 가운데 정렬하여 출력)
 #include "text_align.h"
+// get_concurrent_users, get_is_matched
 #include "request.h"
+// struct timeval 시간차를 ms로 반환
 #include "ping_time.h"
 
 // 입력을 받아서 캐릭터 선택, 게임 매칭 시작 또는 종료 처리
