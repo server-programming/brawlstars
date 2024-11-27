@@ -16,5 +16,7 @@ typedef struct {
 Player* init_player(wchar_t *skin, int x, int y); // 플레이어 초기화
 void draw_player(Player* player); // 플레이어 그리기
 void move_player(Player* player, int ch); // 플레이어 이동
+void player_hit(Player* player);
+void draw_player_hp(Player* player); //플레이어 hp 표시
 
 #endif

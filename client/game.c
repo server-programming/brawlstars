@@ -50,6 +50,9 @@ void init_game(int sd, int client_num, int selected_skin) {
     // 플레이어의 모양(스킨)을 가져옴
     PlayerShape *player_shapes = get_player_shape();
 
+    //디버깅용
+    // wprintf(L"선택된 스킨: %ls\n", player_shapes->shapes[selected_skin]);
+
     // 현재 플레이어 초기화
     Player* player = &players[0];
     player->x = x;
@@ -72,6 +75,7 @@ void init_game(int sd, int client_num, int selected_skin) {
         clear(); // 화면 지우기
 
         draw_map(); // 맵 그리기
+        draw_player_hp(player); //플레이어 hp 표시 -> ****위치, 표시 조정 필요 ****
 
         ch = getch(); // 키 입력
 
@@ -116,7 +120,14 @@ void init_game(int sd, int client_num, int selected_skin) {
         }
         
         // 총알 처리
-        move_bullets(player->x, player->y, player->skin, sd);
+        move_bullets(&players[0], sd);
+        // move_bullets(player->x, player->y, player->skin, sd);
+
+        if (player->is_dead){
+            //사망 화면 전환
+            break;
+        }
+
         draw_bullets(); // 총알 그리기
 
         // 화면 업데이트

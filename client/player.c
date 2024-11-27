@@ -58,3 +58,14 @@ void move_player(Player* player, int ch) {
     }
 }
 
+void player_hit(Player* player) {
+    player->hp--;
+    if (player->hp <= 0) {
+        player->is_dead = 1;
+        // 사망 화면 전환
+    }
+}
+
+void draw_player_hp(Player* player) {
+    mvprintw(0, 0, "HP: %d", player->hp);
+}
