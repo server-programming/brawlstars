@@ -1,5 +1,3 @@
-#include <ncurses.h>
-#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <sys/socket.h>
@@ -72,9 +70,7 @@ void init_game(int sd, int client_num, int selected_skin) {
         }
 
         // 서버로부터 받은 정보로 다른 플레이어 그리기
-        char* line = strtok(buf, "\n");
-        printf("%s", line);
-        
+        char* line = strtok(buf, "\n");        
         
         int index = 1;
         while (line != NULL) {
