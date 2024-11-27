@@ -8,6 +8,10 @@
 // is_bullet_blocked
 #include "map.h"
 
+// 색상 정의
+#define BLUE_COLOR "\x1b[34m"
+#define RESET_COLOR "\x1b[0m"
+
 // 각 총알 구조체를 관리하기 위한 배열
 Bullet local_bullets[MAX_LOCAL_BULLETS];
 int local_bullet_count = 0; // 자신이 발사한 총알 개수
@@ -119,6 +123,7 @@ void draw_bullets() {
     // 로컬 총알 그리기
     for (int i = 0; i < local_bullet_count; i++) {
         mvaddch(local_bullets[i].y, local_bullets[i].x, '*');
+        //mvprintw(local_bullets[i].y, local_bullets[i].x, "%s*%s", BLUE_COLOR, RESET_COLOR);
     }
 
     // 원격 총알 그리기

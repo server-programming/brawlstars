@@ -9,6 +9,8 @@ typedef struct {
     int is_dead; // 사망 여부
     int id; // 플레이어 번호
     int rank; // 플레이어 체력
+
+    int is_local; //플레이어 색상 구분 추가
 } Player;
 
 Player* init_player(wchar_t *skin, int x, int y); // 플레이어 초기화

@@ -24,6 +24,10 @@
 
 #define MAX_PLAYERS 4
 
+// 색상 정의
+#define BLUE_COLOR "\x1b[34m"
+#define RESET_COLOR "\x1b[0m"
+
 // 게임 초기화 및 루프
 void init_game(int sd, int client_num, int selected_skin) {
     // 플레이어 정보 배열 (지역 변수로 선언)
@@ -54,6 +58,13 @@ void init_game(int sd, int client_num, int selected_skin) {
     player->hp = 3;
     player->is_dead = 0;
     player->dir = 1;
+
+    player->is_local = 1;  // 현재 플레이어는 항상 로컬 플레이어
+
+    // 다른 플레이어 초기화
+    for (int i = 1; i < MAX_PLAYERS; i++) {
+        players[i].is_local = 0;  // 다른 플레이어는 로컬 플레이어가 아님
+    }
 
     init_map(); // 맵 초기화
 

@@ -9,6 +9,10 @@
 // 추후 수정 예정
 #include "bullet.h"
 
+// 색상 정의
+#define BLUE_COLOR "\x1b[34m"
+#define RESET_COLOR "\x1b[0m"
+
 // 플레이어 초기화 함수
 Player* init_player(wchar_t* skin, int x, int y) {
     Player* new_player = (Player*)malloc(sizeof(Player));
@@ -24,8 +28,17 @@ Player* init_player(wchar_t* skin, int x, int y) {
 }
 
 // 플레이어 그리기 함수
+// void draw_player(Player* player) {
+//     mvaddwstr(player->y, player->x, player->skin); // 플레이어는 정해진 모양(스킨)으로 표시
+// }
+
+//색상 구분된 플레이어 그리기 함수
 void draw_player(Player* player) {
-    mvaddwstr(player->y, player->x, player->skin); // 플레이어는 정해진 모양(스킨)으로 표시
+    if (player->is_local) {
+        mvprintw(player->y, player->x, "%s%ls%s", BLUE_COLOR, player->skin, RESET_COLOR);
+    } else {
+        mvaddwstr(player->y, player->x, player->skin);
+    }
 }
 
 // 플레이어 이동 함수
