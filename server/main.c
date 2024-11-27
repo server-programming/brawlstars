@@ -31,15 +31,16 @@ typedef struct {
 	int sd;
 } network;
 
-//네트워크 연결이 잘 되었는지 확인하는 함수
+// 네트워크 연결이 잘 되었는지 확인하는 함수 network_connec.c
 network network_connection();
 
+// 서버가 클라이언트에게 데이터를 전송하는 함수 connect_to_client.c
 int connect_to_client(int ns, int cur_client_num, char *buf, int flag);
 
 // 현재 대기 중인 플레이어수를 저장하는 변수
 int cur_player = 0;
 
-// 게임에 접속하면 클라이언트와 서버의 데이터 전송을 이 함수가 관여함
+// 게임에 접속하면 클라이언트와 서버의 데이터 전송을 이 함수가 관여함 recv_send_game_data.c
 int recv_send_game_data(network_player *np, char *buf, int cur_client_num);
 
 void *threadfunc(void *vargp) {
