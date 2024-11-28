@@ -72,7 +72,7 @@ void *manage_room(void *vargp) {
 
 	// 모든 게임 방에 10명의 플레이어 정보를 받을 수 있도록 공간 할당
 	for(int i=0; i<room_num; i++) {
-		printf("test %d\n", i);
+
 		network_player *np;
 		np = (network_player *)malloc(sizeof(network_player) * 10);
 		
@@ -90,10 +90,6 @@ void *manage_room(void *vargp) {
 		if (ready_client_num == 10) {
 			
 			printf("매칭 완료\n");
-
-			for(int i=0; i<10; i++) {
-				printf("ready_client--- %d\n", ready_client[i]); 
-			}
 			
 			// 게임 방에 10명의 클라이언트 정보를 보낸다
 			
@@ -105,34 +101,19 @@ void *manage_room(void *vargp) {
 					find_room = 1;
 					room[i].is_empty = 0;
 
-					// 해당 방에 대기 중이었던 유저들의 정보를 저장한다 
-					for(int j=0; j<10; j++) {
+					// 해당 방에 대기 중이었던 유저들의 정보를 저장한다
+					for (int j = 0; j < 10; j++) {
+						room[i].np[j].ns = malloc(sizeof(int));
 						*(room[i].np[j].ns) = ready_client[j];
-
-						printf("test %d\n", *(room[i].np[j].ns));
 					}
-
-					// 매칭된 유저들의 정보 확인
-					for(int j=0; j<10; j++) {
-						printf("방에 들어간 클라이언트:%d\n", *(room[i].np[j].ns));
-					}
-
-					
 
 					ready_client_num = 0;
 					memset(ready_client, 0, sizeof(ready_client));
 
-
-
 					// 매칭된 유저들의 정보 확인
 					for(int j=0; j<10; j++) {
 						printf("방에 들어간 클라이언트:%d\n", *(room[i].np[j].ns));
 					}
-
-
-
-
-
 
 					break;
 				}
