@@ -52,6 +52,20 @@ void init_game(int sd, int client_num, int selected_skin) {
 
     //디버깅용
     // wprintf(L"선택된 스킨: %ls\n", player_shapes->shapes[selected_skin]);
+    
+    // 현재 플레이어 초기화
+    for (int i = 1; i < MAX_PLAYERS; i++) {
+        Player* other_player = &players[i];
+        // 플레이어의 초기 위치와 상태 설정
+        other_player->x = (i == 0) ? x : (x + i * 2);  // 각 플레이어는 약간씩 다른 위치에서 시작
+        other_player->y = (i == 0) ? y : (y + i * 2);  // 플레이어마다 y 위치 차이
+        other_player->skin = player_shapes->shapes[selected_skin];
+        other_player->hp = 3;
+        other_player->id = client_num;
+        other_player->is_dead = 0;
+        other_player->dir = 1;
+        other_player->is_local = 0;  // 첫 번째 플레이어만 로컬 플레이어로 설정
+    }
 
     // 현재 플레이어 초기화
     Player* player = &players[0];
@@ -61,13 +75,7 @@ void init_game(int sd, int client_num, int selected_skin) {
     player->hp = 3;
     player->is_dead = 0;
     player->dir = 1;
-
     player->is_local = 1;  // 현재 플레이어는 항상 로컬 플레이어
-
-    // 다른 플레이어 초기화
-    for (int i = 1; i < MAX_PLAYERS; i++) {
-        players[i].is_local = 0;  // 다른 플레이어는 로컬 플레이어가 아님
-    }
 
     init_map(); // 맵 초기화
 
@@ -75,13 +83,15 @@ void init_game(int sd, int client_num, int selected_skin) {
         clear(); // 화면 지우기
 
         draw_map(); // 맵 그리기
-        draw_player_hp(player); //플레이어 hp 표시 -> ****위치, 표시 조정 필요 ****
-
+        if (player != NULL) {
+            draw_player_hp(player); //플레이어 hp 표시 -> ****위치, 표시 조정 필요 ****
+        }
         ch = getch(); // 키 입력
 
         // 플레이어 이동 및 방향 설정
         move_player(player, ch);
         shoot_bullet(player->x, player->y, player->dir, player->skin, ch);
+
         // 서버에 플레이어 위치 및 상태 전달 (스킨을 정수형 인덱스로 보냄)
         snprintf(buf, sizeof(buf), "ACCESS_TO_GAME,x=%d,y=%d,skin=%d,hp=%d,is_dead=%d", player->x, player->y, selected_skin, player->hp, player->is_dead);
         if (send(sd, buf, sizeof(buf), 0) == -1) {
@@ -102,8 +112,14 @@ void init_game(int sd, int client_num, int selected_skin) {
         int index = 0;
         while (line != NULL) {
             int id, x1, y1, skin_index, hp, is_dead;
-
-            if (sscanf(line, "%d,x=%d,y=%d,skin=%d,hp=%d,is_dead=%d", &id, &x1, &y1, &skin_index, &hp, &is_dead) == 6) {
+            if (sscanf(line, "x=%d,y=%d,skin=%d,hp=%d,is_dead=%d", &x1, &y1, &skin_index, &hp, &is_dead) == 5) {
+                player->x = x1;
+                player->y = y1;
+                player->skin = player_shapes->shapes[skin_index];
+                player->hp = hp;
+                player->is_dead = is_dead;
+            } 
+            else if (sscanf(line, "%d,x=%d,y=%d,skin=%d,hp=%d,is_dead=%d", &id, &x1, &y1, &skin_index, &hp, &is_dead) == 6) {
                 Player* other_player = &players[index]; // 해당 플레이어의 정보 업데이트
                 other_player->x = x1;
                 other_player->y = y1;
@@ -114,7 +130,7 @@ void init_game(int sd, int client_num, int selected_skin) {
             line = strtok(NULL, "\n");
             index += 1;
         }
-
+        
         for (int i = 0; i < MAX_PLAYERS; i++) {
             draw_player(&players[i]);
         }
@@ -122,12 +138,12 @@ void init_game(int sd, int client_num, int selected_skin) {
         // 총알 처리
         move_bullets(&players[0], sd);
         // move_bullets(player->x, player->y, player->skin, sd);
-
+        /*
         if (player->is_dead){
             draw_game_over_screen(); //게임 오버 스크린 띄움
             break;
         }
-
+        */
         draw_bullets(); // 총알 그리기
 
         // 화면 업데이트
