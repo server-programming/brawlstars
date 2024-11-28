@@ -12,6 +12,9 @@
 #define MAX_PLAYER 1000
 #define MATCHING_NUM 10
 
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond = 	PTHREAD_COND_INITIALIZER;
+
 typedef struct player {
         int x;
         int y;
@@ -31,6 +34,12 @@ typedef struct {
 	int sd;
 } network;
 
+typedef struct {
+	// 게임에 참여하는 10명의 정보를 담을 객체 배열
+	network_player *np;
+
+} room_info;
+
 // 매칭 대기 중인 클라이언트가 10명인지 확인하기 위한 배열
 int ready_client[MATCHING_NUM] = {0, };
 int ready_client_num = 0;
@@ -46,6 +55,47 @@ int cur_player = 0;
 
 // 게임에 접속하면 클라이언트와 서버의 데이터 전송을 이 함수가 관여함 recv_send_game_data.c
 int recv_send_game_data(network_player *np, char *buf, int cur_client_num);
+
+
+// 게임 방 정보를 관리할 쓰레드 함수
+void *manage_room(void *vargp) {
+
+
+	// 우선은 만들 수 있는 방을 전부 다 초기화하고 거기에 매칭된 플레이어들을 할당하는 방식으로 구현
+	// 추후에 동적으로 할당하도록 수정할 예정
+	int room_num = MAX_PLAYER / MATCHING_NUM;
+	int val = 0;
+
+	room_info *room;
+	room = (room_info *)malloc(sizeof(room_info) * room_num);
+
+	// 모든 게임 방에 10명의 플레이어 정보를 받을 수 있도록 공간 할당
+	for(int i=0; i<room_num; i++) {
+		printf("test %d\n", i);
+		network_player *np;
+		np = (network_player *)malloc(sizeof(network_player) * 10);
+		
+		for(int j=0; j<10; j++) {
+			np[j].ns = &val;
+		}
+
+		room[i].np = np;
+	}
+
+	printf("모든 게임 방 공간 할당 완료, 방 개수 %d\n", room_num);
+
+	while(1) {
+		if (ready_client_num == 10) {
+			break;
+		}
+	}
+	printf("매칭 완료\n");
+
+	ready_client_num = 0;
+} 
+
+
+
 
 void *threadfunc(void *vargp) {
 	network_player *np = (network_player *)vargp;
@@ -64,7 +114,6 @@ void *threadfunc(void *vargp) {
 	int access_to_lobby = 1;
 
 	while(1) {
-		printf("현재 대기 중인 클라이언트 수 %d\n", ready_client_num);
 
 		memset(buf, '\0', sizeof(buf));
 		network_status = recv(ns, buf, sizeof(buf), 0);
@@ -116,11 +165,16 @@ void *threadfunc(void *vargp) {
 			// 전역 배열에 접근하므로 락을 걸어야 한다
 			for(int i=0; i<MATCHING_NUM; i++) {
 				if (ready_client[i] == 0) {
+
+					printf("%d 에 클라이언트 정보 저장\n", i);
 					ready_client[i] = np->ns[cur_client_num];
 					ready_client_num += 1;
 					index = i;
+					break;
 				}
 			}
+
+			printf("현재 대기 중인 클라이언트의 수 %d\n", ready_client_num);
 			
 			memset(buf, '\0', sizeof(buf));
 			sprintf(buf, "WAIT_FOR_MATCH");
@@ -137,6 +191,8 @@ void *threadfunc(void *vargp) {
 					break;
 				}
 			}
+
+			printf("클라이언트 %d가 매칭이 되었음\n", index);
 
 			// 서버는 매칭이 완료되면 클라이언트에게 GAME_MATCHED 메시지를 보내 클라이언트가 대기상태를 벗어나 게임을 실행하도록 한다
 			if (status) {
@@ -182,6 +238,7 @@ int main() {
 	int tid_count = 0;
 	int clientlen;
 	pthread_t tid[MAX_PLAYER];
+	pthread_t room_manager;
 	int temp_ns;
 	int ns_accept;
 	
@@ -203,6 +260,8 @@ int main() {
 
 	np->players = p;
 	np->ns = ns;
+
+	pthread_create(&room_manager, NULL, manage_room, NULL);
 
 	while(1) {
 

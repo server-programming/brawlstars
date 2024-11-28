@@ -39,14 +39,23 @@ int recv_send_game_data(network_player *np, char *buf, int cur_client_num) {
 
 	memset(player_pos, '\0', sizeof(player_pos));
 	for(int i=0; i<PLAYER; i++) {
-		memset(buf, '\0', sizeof(buf));
-		if (np->ns[i] > 0) {
-			sprintf(buf, "%d,x=%d,y=%d,skin=%d,hp=%d,is_dead=%d\n",
-				i, np->players[i].x, np->players[i].y, np->players[i].skin,
-				np->players[i].hp, np->players[i].is_dead);
-			strcat(player_pos, buf);
+
+		if (i != cur_client_num) {
+			memset(buf, '\0', sizeof(buf));
+			if (np->ns[i] > 0) {
+				sprintf(buf, "%d,x=%d,y=%d,skin=%d,hp=%d,is_dead=%d\n",
+					i, np->players[i].x, np->players[i].y, np->players[i].skin,
+					np->players[i].hp, np->players[i].is_dead);
+				strcat(player_pos, buf);
+			} else {
+				sprintf(buf, "%d,x=-10,y=-10,skin=0,hp=0,is_dead=0\n", i);
+			}
 		} else {
-			sprintf(buf, "%d,x=-10,y=-10,skin=0,hp=0,is_dead=0\n", i);
+			memset(buf, '\0', sizeof(buf));
+			sprintf(buf, "x=%d,y=%d,skin=%d,hp=%d,is_dead=%d\n",
+					np->players[i].x, np->players[i].y, np->players[i].skin, 
+					np->players[i].hp, np->players[i].is_dead);
+			strcat(player_pos, buf);
 		}
 	}
 
