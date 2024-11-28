@@ -10,6 +10,9 @@ EXEC=brawlstars
 $(EXEC): $(OBJ)
 	$(CC) player.o game.o $(filter-out player.o game.o,$(OBJ)) -o $(EXEC) $(LDFLAGS)
 
+bullet.o: bullet.c bullet.h player.h
+	$(CC) $(CFLAGS) -c bullet.c
+	
 player.o: player.c player.h
 	$(CC) $(CFLAGS) -c player.c
 
