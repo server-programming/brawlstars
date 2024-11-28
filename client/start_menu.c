@@ -2,12 +2,9 @@
 #include <wchar.h>  
 #include <unistd.h>
 #include <string.h>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_mixer.h>
 #include "start_menu.h"
 #include "text_align.h"
 #include "ascii_art.h"
-#include "background_music.h"
 
 // 메뉴 출력 함수
 void print_menu() {
@@ -42,16 +39,6 @@ int get_mode() {
 
 // 시작 메뉴 함수
 void start_menu(int* selected_mode) {
-    if (SDL_Init(SDL_INIT_AUDIO) < 0) {
-        printf("SDL_Init failed: %s\n", SDL_GetError());
-    }
-
-    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
-        printf("Mix_OpenAudio failed: %s\n", Mix_GetError());
-    }
-
-    // play_background_music("../audio_files/lights_camera_action.mp3");
-
     while(1) {
         clear(); // 화면 지우기
 
@@ -84,8 +71,5 @@ void start_menu(int* selected_mode) {
             break;
         }
     }
-    stop_background_music();
-    Mix_CloseAudio(); // Mixer 종료
-    SDL_Quit(); // SDL 종료
 }
 

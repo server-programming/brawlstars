@@ -16,12 +16,17 @@ pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond = 	PTHREAD_COND_INITIALIZER;
 
 typedef struct player {
-        int x;
-        int y;
-        int skin;
+    int x;
+    int y;
+    int skin;
 	int hp;
 	int is_dead;
 } player;
+
+typedef struct bullet {
+    int x, y; // 총알의 좌표
+    int dx, dy; // 총알 이동 방향
+} bullet;
 
 typedef struct network_player {
 	int *ns;

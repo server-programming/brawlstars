@@ -7,14 +7,9 @@
 #include <wchar.h>
 // 네트워크 모듈
 #include <sys/socket.h>
-// 오디오 모듈
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_mixer.h>
 // 시스템 모듈
 #include <sys/time.h>
 // 사용자 정의 모듈
-// play_background_music
-#include "background_music.h"
 // lobby.c 함수 프로토타입 선언
 #include "lobby.h"
 // init_game
@@ -66,15 +61,6 @@ void lobby(int sd, int client_num) {
     long long ping;
     int selected_skin = 0;
 
-    // 오디오 초기화
-    if (SDL_Init(SDL_INIT_AUDIO) < 0 || Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
-        perror("SDL or Mix_OpenAudio failed");
-        return;
-    }
-    
-    // 배경 음악 재생
-    play_background_music("../audio_files/metallic_madness_zone_act_2.mp3");
-
     while (1) {
         // 응답 속도 측정
         gettimeofday(&start, NULL);
@@ -120,8 +106,7 @@ void lobby(int sd, int client_num) {
                     break; // 매칭 대기 상태에서 빠져나오기 위해 while문을 탈출
                 }
 
-                if (is_matched == 1) {                    
-                    stop_background_music(); // 배경 음악 중지 
+                if (is_matched == 1) {                     
                     init_game(sd, client_num, selected_skin); // 게임 시작
                     break;
                 }
