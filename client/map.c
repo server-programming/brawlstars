@@ -21,16 +21,27 @@ void init_map() {
         }
     }
 
-    // 내부 장애물 추가
-    // int num_obstacles = (MAP_HEIGHT * MAP_WIDTH) / 20; // 맵 크기의 5% 정도를 장애물로 채움
-    // for (int i = 0; i < num_obstacles; i++) {
-        // int x, y;
-        // do {
-            // x = rand() % (MAP_WIDTH - 2) + 1;
-            // y = rand() % (MAP_HEIGHT - 2) + 1;
-        // } while (map[y][x] != EMPTY_CHAR);
-        // map[y][x] = OBSTACLE_CHAR;
-    // }
+    // 고정 장애물 추가
+    // 중앙 장애물
+    for (int y = 8; y < 13; y++) {
+        for (int x = 27; x < 34; x++) {
+            map[y][x] = OBSTACLE_CHAR;
+        }
+    }
+
+    // 코너 장애물
+    for (int i = 2; i < 6; i++) {
+        map[i][i] = OBSTACLE_CHAR;
+        map[i][MAP_WIDTH-1-i] = OBSTACLE_CHAR;
+        map[MAP_HEIGHT-1-i][i] = OBSTACLE_CHAR;
+        map[MAP_HEIGHT-1-i][MAP_WIDTH-1-i] = OBSTACLE_CHAR;
+    }
+
+    // 측면 장애물
+    for (int y = 5; y < MAP_HEIGHT - 5; y++) {
+        map[y][10] = OBSTACLE_CHAR;
+        map[y][MAP_WIDTH-11] = OBSTACLE_CHAR;
+    }
 }
 
 // 맵 그리기 함수

@@ -9,8 +9,8 @@
 #include <pthread.h>
 
 #define PORTNUM 12312
-#define MAX_THREAD 100
-#define PLAYER 4
+#define MAX_PLAYER 1000
+#define MATCHING_NUM 10
 
 typedef struct player {
         int x;
@@ -31,13 +31,21 @@ typedef struct {
 	int sd;
 } network;
 
-//네트워크 연결이 잘 되었는지 확인하는 함수
+// 매칭 대기 중인 클라이언트가 10명인지 확인하기 위한 배열
+int ready_client[MATCHING_NUM] = {0, };
+int ready_client_num = 0;
+
+// 네트워크 연결이 잘 되었는지 확인하는 함수 network_connec.c
 network network_connection();
 
+// 서버가 클라이언트에게 데이터를 전송하는 함수 connect_to_client.c
 int connect_to_client(int ns, int cur_client_num, char *buf, int flag);
 
-// 현재 대기 중인 플레이어수를 저장하는 변수
+// 현재 접속 중인 플레이어수를 저장하는 변수
 int cur_player = 0;
+
+// 게임에 접속하면 클라이언트와 서버의 데이터 전송을 이 함수가 관여함 recv_send_game_data.c
+int recv_send_game_data(network_player *np, char *buf, int cur_client_num);
 
 void *threadfunc(void *vargp) {
 	network_player *np = (network_player *)vargp;
@@ -56,6 +64,8 @@ void *threadfunc(void *vargp) {
 	int access_to_lobby = 1;
 
 	while(1) {
+		printf("현재 대기 중인 클라이언트 수 %d\n", ready_client_num);
+
 		memset(buf, '\0', sizeof(buf));
 		network_status = recv(ns, buf, sizeof(buf), 0);
 
@@ -96,33 +106,59 @@ void *threadfunc(void *vargp) {
 				break;
 			}
 		}
-		
-		// 클라이언트가 게임에 접속하는 경우
-		if (strstr(buf, "ACCESS_TO_GAME") != NULL) {
-			printf("%s\n", buf);
-			sscanf(buf, "ACCESS_TO_GAME,x=%d,y=%d,skin=%d,hp=%d,is_dead=%d\n", 
-					&client_x, &client_y, &client_skin, &client_hp, &client_is_dead);
-			np->players[cur_client_num].x = client_x;
-			np->players[cur_client_num].y = client_y;
-			np->players[cur_client_num].skin = client_skin;
-			np->players[cur_client_num].hp = client_hp;
-			np->players[cur_client_num].is_dead = client_is_dead;
+
+		// 클라이언트가 매칭을 요청하면 요청 인원이 10명이 될때까지 대기한다
+		if (strstr(buf, "GET_READY_USER") != NULL) {
+
+			int status = 1;
+			int index = 0;
+
+			// 전역 배열에 접근하므로 락을 걸어야 한다
+			for(int i=0; i<MATCHING_NUM; i++) {
+				if (ready_client[i] == 0) {
+					ready_client[i] = np->ns[cur_client_num];
+					ready_client_num += 1;
+					index = i;
+				}
+			}
 			
-			memset(player_pos, '\0', sizeof(player_pos));
-			for(int i=0; i<PLAYER; i++) {
-				memset(buf, '\0', sizeof(buf));
-				if (np->ns[cur_client_num] != 0) {
-					sprintf(buf, "%d,x=%d,y=%d,skin=%d,hp=%d,is_dead=%d\n", 
-							i, np->players[i].x, np->players[i].y, np->players[i].skin, np->players[i].hp, np->players[i].is_dead);
-					strcat(player_pos, buf);
-				} else {
-					sprintf(buf, "%d,x=0,y=0", i);
+			memset(buf, '\0', sizeof(buf));
+			sprintf(buf, "WAIT_FOR_MATCH");
+			while(1) {
+				if (ready_client_num == MATCHING_NUM) {
+					break;
+				}
+
+				// 서버는 클라이언트에게 WAIT_FOR_MATCHING 메시지를 보내 클라이언트가 기다리게 한다
+				// 클라이언트는 서버로부터 계속 WAIT_FOR_MATCH 메시지를 받으면서 대기한다
+				if (connect_to_client(np->ns[cur_client_num], cur_client_num, buf, 1) == 0) {
+					// 클라이언트가 도중에 연결이 끊길 수 있으므로
+					status = 0;
+					break;
 				}
 			}
 
-			printf("%s\n", player_pos);
+			// 서버는 매칭이 완료되면 클라이언트에게 GAME_MATCHED 메시지를 보내 클라이언트가 대기상태를 벗어나 게임을 실행하도록 한다
+			if (status) {
+				memset(buf, '\0', sizeof(buf));
+				sprintf(buf, "GAME_MATCHED\n");
 
-			if (connect_to_client(np->ns[cur_client_num], cur_client_num, player_pos, 2) == 0) {
+				if (connect_to_client(np->ns[cur_client_num], cur_client_num, buf, 1) == 0) {
+					break;
+				}
+			} else {
+				ready_client[index] = 0;
+				ready_client_num -= 1;
+				break;
+			}
+		}
+	
+
+
+		// 클라이언트가 게임에 접속하는 경우
+		if (strstr(buf, "ACCESS_TO_GAME") != NULL) {
+
+			if (recv_send_game_data(np, buf, cur_client_num) == 0) {
 				break;
 			}
 		}
@@ -145,7 +181,7 @@ int main() {
 	int *ns;
 	int tid_count = 0;
 	int clientlen;
-	pthread_t tid[MAX_THREAD];
+	pthread_t tid[MAX_PLAYER];
 	int temp_ns;
 	int ns_accept;
 	
@@ -157,11 +193,11 @@ int main() {
 	clientlen = sizeof(cli);
 
 	// 클라이언트 정보 저장할 배열 준비
-	player *p = (player *)malloc(sizeof(player) * PLAYER);
+	player *p = (player *)malloc(sizeof(player) * MAX_PLAYER);
 	network_player *np = (network_player *)malloc(sizeof(network_player));
-	ns = (int *)malloc(sizeof(int) * PLAYER);
+	ns = (int *)malloc(sizeof(int) * MAX_PLAYER);
 
-	for(int i=0; i<PLAYER; i++) {
+	for(int i=0; i<MAX_PLAYER; i++) {
 		ns[i] = 0;
 	}
 
@@ -181,7 +217,7 @@ int main() {
 
 		ns_accept = 0;
 
-		for(int i=0; i<PLAYER; i++) {
+		for(int i=0; i<MAX_PLAYER; i++) {
 			if (np->ns[i] == 0) {
 				np->ns[i] = temp_ns;
 				np->cur_client = i;
@@ -196,7 +232,7 @@ int main() {
 		}
 
 		// 쓰레드 생성
-		if (tid_count < MAX_THREAD) {
+		if (tid_count < MAX_PLAYER) {
 			if (pthread_create(&tid[tid_count], NULL, threadfunc, (void *)np) != 0) {
 				perror("pthread_create");
 				break;

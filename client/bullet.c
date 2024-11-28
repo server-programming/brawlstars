@@ -7,6 +7,12 @@
 #include "bullet.h"
 // is_bullet_blocked
 #include "map.h"
+// player 구조체
+#include "player.h"
+
+// 색상 정의
+#define BLUE_COLOR "\x1b[34m"
+#define RESET_COLOR "\x1b[0m"
 
 // 각 총알 구조체를 관리하기 위한 배열
 Bullet local_bullets[MAX_LOCAL_BULLETS];
@@ -56,6 +62,84 @@ void shoot_bullet(int x, int y, int direction, wchar_t *player_shape, int ch) {
     }
 }
 
+// 피격 처리
+// is_player_hit 함수 추가
+int is_player_hit(int bullet_x, int bullet_y, int player_x, int player_y, wchar_t *player_shape) {
+    int player_width = wcslen(player_shape);
+    return (bullet_y == player_y && bullet_x >= player_x && bullet_x < player_x + player_width);
+}
+
+// move_bullets 함수 수정
+void move_bullets(Player* player, int sd) {
+    char bullet_buffer[1024] = "";
+    int buffer_pos = 0;
+
+    // 로컬 총알 처리
+    for (int i = 0; i < local_bullet_count; i++) {
+        int new_x = local_bullets[i].x + local_bullets[i].dx;
+        int new_y = local_bullets[i].y + local_bullets[i].dy;
+        if (is_bullet_collision(new_x, new_y) || new_x < 0 || new_x >= COLS || new_y < 0 || new_y >= LINES) {
+            // 충돌 시 총알 제거
+            for (int j = i; j < local_bullet_count - 1; j++) {
+                local_bullets[j] = local_bullets[j + 1];
+            }
+            local_bullet_count--;
+            i--;
+        } else {
+            // 총알 이동
+            local_bullets[i].x = new_x;
+            local_bullets[i].y = new_y;
+            // 서버로 전송할 데이터 추가
+            buffer_pos += snprintf(
+                bullet_buffer + buffer_pos, sizeof(bullet_buffer) - buffer_pos,
+                "<>x=%d,y=%d,dx=%d,dy=%d\n",
+                local_bullets[i].x, local_bullets[i].y, local_bullets[i].dx, local_bullets[i].dy
+            );
+        }
+    }
+
+    // 서버로 전송
+    if (strlen(bullet_buffer) > 0) {
+        if (send(sd, bullet_buffer, strlen(bullet_buffer), 0) == -1) {
+            perror("send bullets to server");
+        }
+    }
+
+    // 원격 총알 처리
+    for (int i = 0; i < remote_bullet_count; i++) {
+        int new_x = remote_bullets[i].x + remote_bullets[i].dx;
+        int new_y = remote_bullets[i].y + remote_bullets[i].dy;
+        
+        if (is_player_hit(new_x, new_y, player->x, player->y, player->skin)) {
+            // 플레이어 피격 처리
+            player->hp--;
+            if (player->hp <= 0) {
+                player->is_dead = 1;
+                // 사망 처리 
+            }
+            
+            // 총알 제거
+            for (int j = i; j < remote_bullet_count - 1; j++) {
+                remote_bullets[j] = remote_bullets[j + 1];
+            }
+            remote_bullet_count--;
+            i--;
+        } else if (is_bullet_collision(new_x, new_y) || new_x < 0 || new_x >= COLS || new_y < 0 || new_y >= LINES) {
+            // 충돌 시 총알 제거
+            for (int j = i; j < remote_bullet_count - 1; j++) {
+                remote_bullets[j] = remote_bullets[j + 1];
+            }
+            remote_bullet_count--;
+            i--;
+        } else {
+            // 총알 이동
+            remote_bullets[i].x = new_x;
+            remote_bullets[i].y = new_y;
+        }
+    }
+}
+
+/*
 // 총알 이동 및 충돌 처리
 void move_bullets(int player_x, int player_y, wchar_t *player_shape, int sd) {
     char bullet_buffer[1024] = ""; // 서버로 전송할 총알 정보
@@ -113,12 +197,14 @@ void move_bullets(int player_x, int player_y, wchar_t *player_shape, int sd) {
         }
     }
 }
+*/
 
 // 발사된 총알 그리기
 void draw_bullets() {
     // 로컬 총알 그리기
     for (int i = 0; i < local_bullet_count; i++) {
         mvaddch(local_bullets[i].y, local_bullets[i].x, '*');
+        //mvprintw(local_bullets[i].y, local_bullets[i].x, "%s*%s", BLUE_COLOR, RESET_COLOR);
     }
 
     // 원격 총알 그리기
