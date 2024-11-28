@@ -35,8 +35,11 @@ Player* init_player(wchar_t* skin, int x, int y) {
 //색상 구분된 플레이어 그리기 함수
 void draw_player(Player* player) {
     if (player->is_local) {
-        mvprintw(player->y, player->x, "%s%ls%s", BLUE_COLOR, player->skin, RESET_COLOR);
+        
+        mvaddwstr(player->y, player->x, player->skin);
+        // mvprintw(player->y, player->x, "%s%ls%s", BLUE_COLOR, player->skin, RESET_COLOR);
     } else {
+        
         mvaddwstr(player->y, player->x, player->skin);
     }
 }
