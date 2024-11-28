@@ -37,7 +37,7 @@ typedef struct {
 typedef struct {
 	// 게임에 참여하는 10명의 정보를 담을 객체 배열
 	network_player *np;
-
+	int is_empty;
 } room_info;
 
 // 매칭 대기 중인 클라이언트가 10명인지 확인하기 위한 배열
@@ -65,6 +65,7 @@ void *manage_room(void *vargp) {
 	// 추후에 동적으로 할당하도록 수정할 예정
 	int room_num = MAX_PLAYER / MATCHING_NUM;
 	int val = 0;
+	int find_room = 0;
 
 	room_info *room;
 	room = (room_info *)malloc(sizeof(room_info) * room_num);
@@ -80,18 +81,73 @@ void *manage_room(void *vargp) {
 		}
 
 		room[i].np = np;
+		room[i].is_empty = 1;
 	}
 
 	printf("모든 게임 방 공간 할당 완료, 방 개수 %d\n", room_num);
 
 	while(1) {
 		if (ready_client_num == 10) {
-			break;
+			
+			printf("매칭 완료\n");
+
+			for(int i=0; i<10; i++) {
+				printf("ready_client--- %d\n", ready_client[i]); 
+			}
+			
+			// 게임 방에 10명의 클라이언트 정보를 보낸다
+			
+			// 반복문을 돌면서 빈 방이 있는지 찾는다
+			for(int i=0; i<room_num; i++) {
+
+				// 빈 방이 있다면 
+				if (room[i].is_empty) {
+					find_room = 1;
+					room[i].is_empty = 0;
+
+					// 해당 방에 대기 중이었던 유저들의 정보를 저장한다 
+					for(int j=0; j<10; j++) {
+						*(room[i].np[j].ns) = ready_client[j];
+
+						printf("test %d\n", *(room[i].np[j].ns));
+					}
+
+					// 매칭된 유저들의 정보 확인
+					for(int j=0; j<10; j++) {
+						printf("방에 들어간 클라이언트:%d\n", *(room[i].np[j].ns));
+					}
+
+					
+
+					ready_client_num = 0;
+					memset(ready_client, 0, sizeof(ready_client));
+
+
+
+					// 매칭된 유저들의 정보 확인
+					for(int j=0; j<10; j++) {
+						printf("방에 들어간 클라이언트:%d\n", *(room[i].np[j].ns));
+					}
+
+
+
+
+
+
+					break;
+				}
+			}
+
+			// 방이 꽉 차서 빈 방을 찾지 못했다면
+			if (find_room == 0) {
+				break;
+			} else {
+				continue;
+			}	
 		}
 	}
-	printf("매칭 완료\n");
 
-	ready_client_num = 0;
+	printf("방이 꽉 찼음\n");
 } 
 
 
@@ -168,6 +224,8 @@ void *threadfunc(void *vargp) {
 
 					printf("%d 에 클라이언트 정보 저장\n", i);
 					ready_client[i] = np->ns[cur_client_num];
+					printf("ns값 %d\n", np->ns[cur_client_num]);
+					printf("ready_client %d\n", ready_client[i]);
 					ready_client_num += 1;
 					index = i;
 					break;
