@@ -50,17 +50,22 @@ typedef struct {
 // 게임 방 구조체
 typedef struct {
 	// 게임에 참여하는 10명의 정보를 담을 구조체 배열
-	network_player *np;
+	network_player *np2;
 	int is_empty;
 } room_info;
 
+room_info *room;
 
 typedef struct {
 	int ns;
 	player p;
 	int is_empty;
+	int client_num;
 } ready_line;
 
+
+// 모든 클라이언트들의 정보를 담는 전역 배열 선언
+network_player *np;
 
 // 매칭 대기 중인 클라이언트가 10명인지 확인하기 위한 배열
 ready_line ready_client[MATCHING_NUM];
@@ -87,14 +92,13 @@ void *manage_room(void *vargp) {
 	int room_num = MAX_PLAYER / MATCHING_NUM;
 	int find_room = 0;
 
-	room_info *room;
 	room = (room_info *)malloc(sizeof(room_info) * room_num);
 
 	// 모든 게임 방에 10명의 플레이어 정보를 받을 수 있도록 공간 할당
 	for(int i=0; i<room_num; i++) {
 
 		int *ns;
-		network_player *np;
+		network_player *np1;
 		player *p;
 		int *room_index;
 
@@ -102,13 +106,13 @@ void *manage_room(void *vargp) {
 		p = (player *)malloc(sizeof(player) * MATCHING_NUM);
 		room_index = (int *)malloc(sizeof(int) * MATCHING_NUM);
 
-		np = (network_player *)malloc(sizeof(network_player));
+		np1 = (network_player *)malloc(sizeof(network_player));
 
-		np->ns = ns;
-		np->players = p;
-		np->room_index = room_index;
+		np1->ns = ns;
+		np1->players = p;
+		np1->room_index = room_index;
 
-		room[i].np = np;
+		room[i].np2 = np1;
 		room[i].is_empty = 1;
 	}
 
@@ -131,9 +135,10 @@ void *manage_room(void *vargp) {
 
 					// 해당 방에 대기 중이었던 유저들의 정보를 저장한다
 					for (int j = 0; j < MATCHING_NUM; j++) {
-						room[i].np->ns[j] = ready_client[j].ns;
-						room[i].np->players[j] = ready_client[j].p;
-						room[i].np->room_index[j] = i;
+						room[i].np2->ns[j] = ready_client[j].ns;
+						room[i].np2->players[j] = ready_client[j].p;
+						room[i].np2->room_index[j] = i;
+						np->room_index[ready_client[j].client_num] = i;
 					}
 
 					ready_client_num = 0;
@@ -143,9 +148,8 @@ void *manage_room(void *vargp) {
 
 					// 매칭된 유저들의 정보 확인
 					for(int j=0; j<MATCHING_NUM; j++) {
-						printf("방에 들어간 클라이언트:%d\n", room[i].np->ns[j]);
+						printf("%d번 방에 들어간 클라이언트:%d\n", i, room[i].np2->ns[j]);
 					}
-
 					break;
 				}
 			}
@@ -166,7 +170,6 @@ void *manage_room(void *vargp) {
 
 
 void *threadfunc(void *vargp) {
-	network_player *np = (network_player *)vargp;
 	char buf[50];
 	char player_pos[200];
 	int network_status;
@@ -238,6 +241,7 @@ void *threadfunc(void *vargp) {
 					ready_client[i].ns = np->ns[cur_client_num];
 					ready_client[i].p = np->players[cur_client_num];
 					ready_client[i].is_empty = 0;
+					ready_client[i].client_num = cur_client_num;
 					ready_client_num += 1;
 					index = i;
 					break;
@@ -255,14 +259,18 @@ void *threadfunc(void *vargp) {
 
 				// 서버는 클라이언트에게 WAIT_FOR_MATCHING 메시지를 보내 클라이언트가 기다리게 한다
 				// 클라이언트는 서버로부터 계속 WAIT_FOR_MATCH 메시지를 받으면서 대기한다
-				if (connect_to_client(np->ns[cur_client_num], cur_client_num, buf, 1) == 0) {
+
+				//if (connect_to_client(np->ns[cur_client_num], cur_client_num, buf, 1) == 0) {
 					// 클라이언트가 도중에 연결이 끊길 수 있으므로
-					status = 0;
-					break;
-				}
+				//	status = 0;
+				//	break;
+				//}
 			}
 
+			sleep(1);
+
 			printf("클라이언트 %d가 매칭이 되었음\n", index);
+			printf("매칭된 방 번호 %d\n", np->room_index[cur_client_num]);
 
 			// 서버는 매칭이 완료되면 클라이언트에게 GAME_MATCHED 메시지를 보내 클라이언트가 대기상태를 벗어나 게임을 실행하도록 한다
 			if (status) {
@@ -321,7 +329,7 @@ int main() {
 
 	// 클라이언트 정보 저장할 배열 준비
 	player *p = (player *)malloc(sizeof(player) * MAX_PLAYER);
-	network_player *np = (network_player *)malloc(sizeof(network_player));
+	np = (network_player *)malloc(sizeof(network_player));
 	ns = (int *)malloc(sizeof(int) * MAX_PLAYER);
 	int *room_index = (int *)malloc(sizeof(int) * MAX_PLAYER);
 
@@ -374,7 +382,7 @@ int main() {
 
 		// 쓰레드 생성
 		if (tid_count < MAX_PLAYER) {
-			if (pthread_create(&tid[tid_count], NULL, threadfunc, (void *)np) != 0) {
+			if (pthread_create(&tid[tid_count], NULL, threadfunc, NULL) != 0) {
 				perror("pthread_create");
 				break;
 			} else {
