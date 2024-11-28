@@ -84,7 +84,7 @@ void init_game(int sd, int client_num, int selected_skin) {
         // 서버로부터 받은 정보로 다른 플레이어 그리기
         char* line = strtok(buf, "\n");        
         
-        int index = 1;
+        int index = 0;
         while (line != NULL) {
             int id, x1, y1, skin_index, hp, is_dead;
 
