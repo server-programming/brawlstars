@@ -9,9 +9,9 @@
 #define PLAYER 4
 
 typedef struct player {
-        int x;
-        int y;
-        int skin;
+	int x;
+	int y;
+	int skin;
 	int hp;
 	int is_dead;
 } player;
