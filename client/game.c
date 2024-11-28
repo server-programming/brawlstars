@@ -54,20 +54,6 @@ void init_game(int sd, int client_num, int selected_skin) {
     // wprintf(L"선택된 스킨: %ls\n", player_shapes->shapes[selected_skin]);
     
     // 현재 플레이어 초기화
-    for (int i = 1; i < MAX_PLAYERS; i++) {
-        Player* other_player = &players[i];
-        // 플레이어의 초기 위치와 상태 설정
-        other_player->x = (i == 0) ? x : (x + i * 2);  // 각 플레이어는 약간씩 다른 위치에서 시작
-        other_player->y = (i == 0) ? y : (y + i * 2);  // 플레이어마다 y 위치 차이
-        other_player->skin = player_shapes->shapes[selected_skin];
-        other_player->hp = 3;
-        other_player->id = client_num;
-        other_player->is_dead = 0;
-        other_player->dir = 1;
-        other_player->is_local = 0;  // 첫 번째 플레이어만 로컬 플레이어로 설정
-    }
-
-    // 현재 플레이어 초기화
     Player* player = &players[0];
     player->x = x;
     player->y = y;
@@ -76,6 +62,18 @@ void init_game(int sd, int client_num, int selected_skin) {
     player->is_dead = 0;
     player->dir = 1;
     player->is_local = 1;  // 현재 플레이어는 항상 로컬 플레이어
+    
+    // 다른 플레이어들 초기화 (player[1] ~ player[3]) -> 좌표는 (-1, -1)
+    for (int i = 1; i < MAX_PLAYERS; i++) {
+        Player* other_player = &players[i];
+        other_player->x = -1;  // 초기 위치를 (-1, -1)로 설정
+        other_player->y = -1;
+        other_player->skin = player_shapes->shapes[selected_skin];  // 스킨은 동일
+        other_player->hp = 3;
+        other_player->is_dead = 0;
+        other_player->dir = 1;
+        other_player->is_local = 0;  // 다른 플레이어는 로컬이 아님
+    }
 
     init_map(); // 맵 초기화
 
@@ -109,7 +107,7 @@ void init_game(int sd, int client_num, int selected_skin) {
         // 서버로부터 받은 정보로 다른 플레이어 그리기
         char* line = strtok(buf, "\n");        
         
-        int index = 0;
+        int index = 1;
         while (line != NULL) {
             int id, x1, y1, skin_index, hp, is_dead;
             if (sscanf(line, "x=%d,y=%d,skin=%d,hp=%d,is_dead=%d", &x1, &y1, &skin_index, &hp, &is_dead) == 5) {
@@ -126,9 +124,9 @@ void init_game(int sd, int client_num, int selected_skin) {
                 other_player->skin = player_shapes->shapes[skin_index]; // 정수형 인덱스를 통해 스킨 설정
                 other_player->hp = hp;
                 other_player->is_dead = is_dead;
+                index += 1;
             }
             line = strtok(NULL, "\n");
-            index += 1;
         }
         
         for (int i = 0; i < MAX_PLAYERS; i++) {
