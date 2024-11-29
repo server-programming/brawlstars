@@ -104,7 +104,6 @@ int recv_remote_bullets(int sd) {
         perror("recv bullets from server");
         return 1;
     }
-
     // 서버에서 받은 총알 정보 처리
     char* line = strtok(buf, "\n");
     while (line != NULL) {
@@ -128,8 +127,7 @@ void draw_bullets(int sd) {
     if (send_local_bullets(sd) != 0) {
         return;
     }    
-    
-    
+        
     // 서버로부터 총알 정보를 수신
     if (recv_remote_bullets(sd) != 0) {
         return;

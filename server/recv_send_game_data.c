@@ -9,9 +9,9 @@
 #define PLAYER 4
 
 typedef struct player {
-	int x;
-	int y;
-	int skin;
+        int x;
+        int y;
+        int skin;
 	int hp;
 	int is_dead;
 } player;
@@ -25,7 +25,7 @@ typedef struct network_player {
 int connect_to_client(int ns, int cur_client_num, char *buf, int flag);
 
 int recv_send_game_data(network_player *np, char *buf, int cur_client_num) {
-	char buf1[1024];
+	char buf1[50];
 	char player_pos[1024];
 	int client_x, client_y, client_skin, client_hp, client_is_dead;
 	sscanf(buf, "ACCESS_TO_GAME,x=%d,y=%d,skin=%d,hp=%d,is_dead=%d\n",
@@ -41,22 +41,22 @@ int recv_send_game_data(network_player *np, char *buf, int cur_client_num) {
 	for(int i=0; i<PLAYER; i++) {
 
 		if (i != cur_client_num) {
-			memset(buf1, '\0', sizeof(buf));
+			memset(buf, '\0', sizeof(buf));
 			if (np->ns[i] > 0) {
-				sprintf(buf1, "%d,x=%d,y=%d,skin=%d,hp=%d,is_dead=%d\n",
+				sprintf(buf, "%d,x=%d,y=%d,skin=%d,hp=%d,is_dead=%d\n",
 					i, np->players[i].x, np->players[i].y, np->players[i].skin,
 					np->players[i].hp, np->players[i].is_dead);
+				strcat(player_pos, buf);
 			} else {
-				sprintf(buf1, "%d,x=-10,y=-10,skin=0,hp=3,is_dead=0\n", i);
+				sprintf(buf, "%d,x=-10,y=-10,skin=0,hp=0,is_dead=0\n", i);
 			}
 		} else {
-			memset(buf1, '\0', sizeof(buf));
-			sprintf(buf1, "x=%d,y=%d,skin=%d,hp=%d,is_dead=%d\n",
+			memset(buf, '\0', sizeof(buf));
+			sprintf(buf, "x=%d,y=%d,skin=%d,hp=%d,is_dead=%d\n",
 					np->players[i].x, np->players[i].y, np->players[i].skin, 
 					np->players[i].hp, np->players[i].is_dead);
+			strcat(player_pos, buf);
 		}
-
-		strncat(player_pos, buf1, strlen(buf1));
 	}
 
 	printf("%s\n", player_pos);

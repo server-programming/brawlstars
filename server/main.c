@@ -312,7 +312,7 @@ void *threadfunc(void *vargp) {
 				break;
 			}
 		}
-
+        
 		if (strstr(buf, "LOCAL_BULLET_INFO") != NULL) {
 
 			// 클라이언트로부터 총알 정보들을 받아서 갱신한다
@@ -361,7 +361,6 @@ void *threadfunc(void *vargp) {
 
 			printf("총알 정보 수신 중\n");
 		}
-
 	}
 
 	if (is_matching) {
