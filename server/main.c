@@ -27,6 +27,10 @@ typedef struct bullet {
 	int dx, dy;
 } bullet;
 
+typedef struct {
+	bullet *bullet_info;
+} bullet_array;
+
 // 모든 클라이언트들의 정보를 담은 구조체
 typedef struct network_player {
 
@@ -39,6 +43,9 @@ typedef struct network_player {
 
 	// 입장한 게임 방의 번호를 저장하는 배열
 	int *room_index;
+
+	// 클라이언트들의 총알 정보를 저장하는 배열
+	bullet_array *bullets;
 } network_player;
 
 typedef struct {
@@ -166,7 +173,6 @@ void *manage_room(void *vargp) {
 void *threadfunc(void *vargp) {
 	char buf[1024];
 	char player_pos[1024];
-	char buf1[1024];
 	int network_status;
 	int client_x;
 	int client_y;
@@ -175,6 +181,11 @@ void *threadfunc(void *vargp) {
 	int client_is_dead;
 	int cur_client_num = np->cur_client;
 	int ns = np->ns[cur_client_num];
+
+	int bullet_x;
+	int bullet_y;
+	int bullet_dx;
+	int bullet_dy;
 
 	// 클라이언트가 로비에 처음 접속하는지 확인하기 위한 변수
 	int access_to_lobby = 1;
@@ -194,6 +205,8 @@ void *threadfunc(void *vargp) {
 		} else if (network_status == 0) {
 			break;
 		}
+
+		printf("%s\n", buf);
 
 		// 클라이언트가 서버와 연결될 경우 고유번호를 전송한다
 		if (strstr(buf, "GET_CLIENT_UNIQUE_NUM") != NULL) {
@@ -293,19 +306,22 @@ void *threadfunc(void *vargp) {
 		}
 	
 
-
 		// 클라이언트가 게임에 접속하는 경우
 		if (strstr(buf, "ACCESS_TO_GAME") != NULL) {
-
+			
 			if (recv_send_game_data(np, buf, cur_client_num) == 0) {
 				break;
 			}
 		}
 
 		if (strstr(buf, "LOCAL_BULLET_INFO") != NULL) {
-			
-			printf("%s\n", buf);
+			sscanf(buf, "LOCAL_BULLET_INFO,x=%d,y=%d,dx=%d,dy=%d\n",
+					&bullet_x, &bullet_y, &bullet_dx, &bullet_dy);
+
+			printf("bullet, %d, %d\n", bullet_x, bullet_y);
 		}
+
+
 	}
 
 	if (is_matching) {
@@ -348,6 +364,22 @@ int main() {
 	np = (network_player *)malloc(sizeof(network_player));
 	ns = (int *)malloc(sizeof(int) * MAX_PLAYER);
 	int *room_index = (int *)malloc(sizeof(int) * MAX_PLAYER);
+	bullet_array *bullets = (bullet_array *)malloc(sizeof(bullet_array) * MAX_PLAYER);
+
+	// 클라이언트들의 총알 정보를 저장할 배열 준비
+	for(int i=0; i<MAX_PLAYER; i++) {
+		bullet *bullet_info;
+		bullet_info = (bullet *)malloc(sizeof(bullet) * 10);
+
+		for(int j=0; j<10; j++) {
+			bullet_info[j].x = 0;
+			bullet_info[j].y = 0;
+			bullet_info[j].dx = 0;
+			bullet_info[j].dy = 0;
+		}
+
+		bullets[i].bullet_info = bullet_info;
+	}
 
 	// 처음에는 모든 클라이언트가 배정된 게임방이 없으므로 -1로 초기화한다
 	for(int i=0; i<MAX_PLAYER; i++) {
@@ -361,6 +393,7 @@ int main() {
 	np->players = p;
 	np->ns = ns;
 	np->room_index = room_index;
+	np->bullets = bullets;
 
 	// 대기열 초기화
 	for(int i=0; i<MATCHING_NUM; i++) {
