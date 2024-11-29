@@ -13,7 +13,6 @@
 #define MATCHING_NUM 10
 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t cond = 	PTHREAD_COND_INITIALIZER;
 
 typedef struct player {
         int x;
@@ -50,25 +49,19 @@ typedef struct {
 // 게임 방 구조체
 typedef struct {
 	// 게임에 참여하는 10명의 정보를 담을 구조체 배열
-	network_player *np2;
+	network_player *np_room;
 	int is_empty;
 } room_info;
 
-room_info *room;
-
-typedef struct {
-	int ns;
-	player p;
-	int is_empty;
-	int client_num;
-} ready_line;
-
-
-// 모든 클라이언트들의 정보를 담는 전역 배열 선언
+// 모든 클라이언트들의 정보를 담은 배열에 접근할 수 있는 포인터 선언
 network_player *np;
 
+// 모든 게임방에 대한 정보를 담는 전역 배열 선언
+room_info *room;
+
 // 매칭 대기 중인 클라이언트가 10명인지 확인하기 위한 배열
-ready_line ready_client[MATCHING_NUM];
+// ready_client 배열 - 클라이언트 고유 번호를 입력받는다
+int ready_client[MATCHING_NUM];
 int ready_client_num = 0;
 
 // 네트워크 연결이 잘 되었는지 확인하는 함수 network_connec.c
@@ -98,7 +91,7 @@ void *manage_room(void *vargp) {
 	for(int i=0; i<room_num; i++) {
 
 		int *ns;
-		network_player *np1;
+		network_player *np_room_new;
 		player *p;
 		int *room_index;
 
@@ -106,13 +99,13 @@ void *manage_room(void *vargp) {
 		p = (player *)malloc(sizeof(player) * MATCHING_NUM);
 		room_index = (int *)malloc(sizeof(int) * MATCHING_NUM);
 
-		np1 = (network_player *)malloc(sizeof(network_player));
+		np_room_new = (network_player *)malloc(sizeof(network_player));
 
-		np1->ns = ns;
-		np1->players = p;
-		np1->room_index = room_index;
+		np_room_new->ns = ns;
+		np_room_new->players = p;
+		np_room_new->room_index = room_index;
 
-		room[i].np2 = np1;
+		room[i].np_room = np_room_new;
 		room[i].is_empty = 1;
 	}
 
@@ -134,21 +127,22 @@ void *manage_room(void *vargp) {
 					room[i].is_empty = 0;
 
 					// 해당 방에 대기 중이었던 유저들의 정보를 저장한다
+					// ready_client에 인덱스로 접근하면 현재 대기 중인 클라이언트의 고유 번호를 확인할 수 있다
 					for (int j = 0; j < MATCHING_NUM; j++) {
-						room[i].np2->ns[j] = ready_client[j].ns;
-						room[i].np2->players[j] = ready_client[j].p;
-						room[i].np2->room_index[j] = i;
-						np->room_index[ready_client[j].client_num] = i;
+						room[i].np_room->ns[j] = np->ns[ready_client[j]];
+						room[i].np_room->players[j] = np->players[ready_client[j]];
+						room[i].np_room->room_index[j] = i;
+						np->room_index[ready_client[j]] = i;
 					}
 
 					ready_client_num = 0;
 					for(int j=0; j<MATCHING_NUM; j++) {
-						ready_client[j].is_empty = 1;
+						ready_client[j] = -1;
 					}
 
 					// 매칭된 유저들의 정보 확인
 					for(int j=0; j<MATCHING_NUM; j++) {
-						printf("%d번 방에 들어간 클라이언트:%d\n", i, room[i].np2->ns[j]);
+						printf("%d번 방에 들어간 클라이언트:%d\n", i, room[i].np_room->ns[j]);
 					}
 					break;
 				}
@@ -183,6 +177,10 @@ void *threadfunc(void *vargp) {
 
 	// 클라이언트가 로비에 처음 접속하는지 확인하기 위한 변수
 	int access_to_lobby = 1;
+
+	// 클라이언트가 대기열에 있었는지 확인하기 위한 변수
+	int is_matching = 0;
+	int ready_index;
 
 	while(1) {
 
@@ -231,19 +229,18 @@ void *threadfunc(void *vargp) {
 		if (strstr(buf, "GET_READY_USER") != NULL) {
 
 			int status = 1;
-			int index = 0;
+
+			is_matching = 1;
 
 			// 전역 배열에 접근하므로 락을 걸어야 한다
 			for(int i=0; i<MATCHING_NUM; i++) {
-				if (ready_client[i].is_empty) {
+				if (ready_client[i] == -1) {
 					
-					printf("%d 에 클라이언트 정보 저장\n", i);
-					ready_client[i].ns = np->ns[cur_client_num];
-					ready_client[i].p = np->players[cur_client_num];
-					ready_client[i].is_empty = 0;
-					ready_client[i].client_num = cur_client_num;
+					printf("대기열 %d번 위치에 클라이언트 정보 저장\n", i);
+					// 대기열에 클라이언트 고유 번호 저장
+					ready_client[i] = cur_client_num;
 					ready_client_num += 1;
-					index = i;
+					ready_index = i;
 					break;
 				}
 			}
@@ -253,6 +250,11 @@ void *threadfunc(void *vargp) {
 			memset(buf, '\0', sizeof(buf));
 			sprintf(buf, "WAIT_FOR_MATCH");
 			while(1) {
+
+
+				// 클라이언트가 대기 중에 오프라인이 되었을 경우에 대해서도 코드 필요함
+				//
+
 				if (ready_client_num == MATCHING_NUM) {
 					break;
 				}
@@ -267,10 +269,11 @@ void *threadfunc(void *vargp) {
 				//}
 			}
 
-			sleep(1);
+			sleep(2);
 
-			printf("클라이언트 %d가 매칭이 되었음\n", index);
-			printf("매칭된 방 번호 %d\n", np->room_index[cur_client_num]);
+			printf("클라이언트 %d가 %d번 방에 매칭 되었음\n", cur_client_num, np->room_index[cur_client_num]);
+
+			is_matching = 0;
 
 			// 서버는 매칭이 완료되면 클라이언트에게 GAME_MATCHED 메시지를 보내 클라이언트가 대기상태를 벗어나 게임을 실행하도록 한다
 			if (status) {
@@ -281,8 +284,9 @@ void *threadfunc(void *vargp) {
 					break;
 				}
 			} else {
-				ready_client[index].is_empty = 1;
+				ready_client[ready_index] = -1;
 				ready_client_num -= 1;
+				printf("매칭 취소 현재 대기 중인 클라이언트의 수 %d\n", ready_client_num);
 				break;
 			}
 		}
@@ -296,6 +300,12 @@ void *threadfunc(void *vargp) {
 				break;
 			}
 		}
+	}
+
+	if (is_matching) {
+		ready_client[ready_index] = -1;
+		ready_client_num -= 1;
+		printf("매칭 취소 현재 대기 중인 클라이언트의 수 %d\n", ready_client_num);
 	}
 
 	printf("client %d is offline\n", cur_client_num);
@@ -348,7 +358,7 @@ int main() {
 
 	// 대기열 초기화
 	for(int i=0; i<MATCHING_NUM; i++) {
-		ready_client[i].is_empty = 1;
+		ready_client[i] = -1;
 	}
 
 	pthread_create(&room_manager, NULL, manage_room, NULL);
