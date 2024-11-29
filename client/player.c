@@ -46,7 +46,7 @@ void init_players(Player players[], int players_num, int selected_skin) {
 
 // 서버에 플레이어 정보 전송
 int send_player_info(int sd, Player* player, int selected_skin) {
-    char buf[1000];
+    char buf[1024];
     // 서버에 플레이어 위치 및 상태 전달
     snprintf(buf, sizeof(buf), "ACCESS_TO_GAME,x=%d,y=%d,skin=%d,hp=%d,is_dead=%d", player->x, player->y, selected_skin, player->hp, player->is_dead);
 
@@ -59,7 +59,7 @@ int send_player_info(int sd, Player* player, int selected_skin) {
 
 // 서버에서 다른 플레이어 정보 수신
 int recv_other_players_info(int sd, Player players[]) {
-    char buf[1000];
+    char buf[1024];
     memset(buf, 0, sizeof(buf));  // 수신하기 전에 버퍼 초기화
 
     if (recv(sd, buf, sizeof(buf), 0) == -1) {
