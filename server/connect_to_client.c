@@ -10,7 +10,7 @@
 int connect_to_client(int ns, int cur_client_num, char *buf, int flag) {
 	int network_status;
 	char buf1[50];
-	char buf2[200];
+	char buf2[1024];
 
 	if (flag == 1) {
 		strcpy(buf1, buf);

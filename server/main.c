@@ -172,7 +172,7 @@ void *manage_room(void *vargp) {
 
 void *threadfunc(void *vargp) {
 	char buf[1024];
-	char player_pos[1024];
+	char bullet_location[1024];
 	int network_status;
 	int client_x;
 	int client_y;
@@ -308,18 +308,66 @@ void *threadfunc(void *vargp) {
 
 		// 클라이언트가 게임에 접속하는 경우
 		if (strstr(buf, "ACCESS_TO_GAME") != NULL) {
-			
 			if (recv_send_game_data(np, buf, cur_client_num) == 0) {
 				break;
 			}
 		}
 
 		if (strstr(buf, "LOCAL_BULLET_INFO") != NULL) {
-			sscanf(buf, "LOCAL_BULLET_INFO,x=%d,y=%d,dx=%d,dy=%d\n",
-					&bullet_x, &bullet_y, &bullet_dx, &bullet_dy);
 
-			printf("bullet, %d, %d\n", bullet_x, bullet_y);
+			printf("총알 정보 수신\n");
+			// 클라이언트로부터 총알 정보들을 받아서 갱신한다
+			int bullet_index = 0;
+
+			char *line = strtok(buf, "\n");
+			while(line != NULL) {
+				if (sscanf(buf, "LOCAL_BULLET_INO,x=%d,y=%d,dx=%d,dy=%d",
+					&bullet_x, &bullet_y, &bullet_dx, &bullet_dy) == 4) {
+					np->bullets[cur_client_num].bullet_info[bullet_index].x = bullet_x;
+					np->bullets[cur_client_num].bullet_info[bullet_index].y = bullet_y;
+					np->bullets[cur_client_num].bullet_info[bullet_index].dx = bullet_dx;
+					np->bullets[cur_client_num].bullet_info[bullet_index].dy = bullet_dy;
+
+					bullet_index++;
+				}
+				line = strtok(NULL, "\n");
+			}
+			
+			memset(bullet_location, '\0', sizeof(bullet_location));
+			for(int i=0; i<10; i++) {
+
+				// 현재 서버와 통신 중인 클라이언트가 아니며
+				
+					// 네트워크가 연결되어있다면
+					if (np->ns[i] > 0) {
+						// 해당 클라이언트의 총알 정보를 읽어서 하나의 배열에 저장한다
+						for (int j=0; j<10; j++) {
+							memset(buf, '\0', sizeof(buf));
+							sprintf(buf, "%d,x=%d,y=%d,dx=%d,dy=%d\n", 
+								i, 
+								np->bullets[i].bullet_info[j].x,
+								np->bullets[i].bullet_info[j].y,
+								np->bullets[i].bullet_info[j].dx,
+								np->bullets[i].bullet_info[j].dy);
+
+							strncat(bullet_location, buf, strlen(buf));
+							printf("i,j : %d %d\n", i, j);
+						}
+					}
+				
+			}
+
+			printf("<<bullet>>\n%s\n", bullet_location);
+
+			// 서버와 통신 중인 클라이언트를 제외한 나머지 클라이언트들의 총알 정보를 전송
+			if (connect_to_client(np->ns[cur_client_num], cur_client_num, bullet_location, 2) == 0) {
+				break;
+			}
+
+			printf("총알 정보 수신 중\n");
 		}
+
+		printf("test13\n");
 
 
 	}
