@@ -84,14 +84,12 @@ int send_local_bullets(int sd) {
     }
     
     // 서버로 전송 (서버 단 구현 시 주석 해제)
-    /*
     if (strlen(buf) > 0) {
         if (send(sd, buf, strlen(buf), 0) == -1) {
             perror("send bullets to server");
             return 1;
         }
     }
-    */
     return 0;
 }
 // 서버로부터 총알 정보 수신
@@ -121,11 +119,9 @@ int recv_remote_bullets(int sd) {
 // 총알 그리기
 void draw_bullets(int sd) {
     // 서버로부터 총알 정보를 수신
-    /*
     if (recv_remote_bullets(sd) != 0) {
         return;
     }
-    */
     
     // 서버로 총알 정보를 전송
     if (send_local_bullets(sd) != 0) {
@@ -167,8 +163,7 @@ void debug_bullets(char ch, int sd) {
         len += snprintf(buf + len, sizeof(buf) - len, "1,x=%d,y=5,dx=0,dy=1\n", x);
     }
 
-    // 'c' 키를 누르면 buf에 있는 총알 데이터를 remote_bullets 배열에 추가
-        // 'c' 키가 눌리면 buf에 있는 총알 데이터를 remote_bullets 배열에 추가
+    // 'c' 키가 눌리면 buf에 있는 총알 데이터를 remote_bullets 배열에 추가
     if (ch == 'c') {
         // buf를 줄 단위로 나누어서 처리
         char* line = strtok(buf, "\n");
