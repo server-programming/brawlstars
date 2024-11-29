@@ -83,6 +83,11 @@ int send_local_bullets(int sd) {
         }
     }
     
+    // 서버에 아무것도 보내지 않는 것을 방지하기 위한 코드    
+    if (strlen(buf) == 0) {
+        snprintf(buf, sizeof(buf), "LOCAL_BULLET_INFO\n");
+    }        
+
     // 서버로 전송 (서버 단 구현 시 주석 해제)
     if (strlen(buf) > 0) {
         if (send(sd, buf, strlen(buf), 0) == -1) {
@@ -118,15 +123,17 @@ int recv_remote_bullets(int sd) {
 
 // 총알 그리기
 void draw_bullets(int sd) {
-    // 서버로부터 총알 정보를 수신
-    if (recv_remote_bullets(sd) != 0) {
-        return;
-    }
     
     // 서버로 총알 정보를 전송
     if (send_local_bullets(sd) != 0) {
         return;
     }    
+    
+    
+    // 서버로부터 총알 정보를 수신
+    if (recv_remote_bullets(sd) != 0) {
+        return;
+    }
     
     update_bullets();
     // 로컬 총알 그리기

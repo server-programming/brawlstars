@@ -22,6 +22,7 @@
 #include "request.h"
 // struct timeval 시간차를 ms로 반환
 #include "ping_time.h"
+#include "player.h"
 
 // 입력을 받아서 캐릭터 선택, 게임 매칭 시작 또는 종료 처리
 int get_input_and_process(int *selected_skin, int *is_matching) {
