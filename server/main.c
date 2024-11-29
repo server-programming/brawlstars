@@ -315,13 +315,11 @@ void *threadfunc(void *vargp) {
 
 		if (strstr(buf, "LOCAL_BULLET_INFO") != NULL) {
 
-			printf("총알 정보 수신\n");
 			// 클라이언트로부터 총알 정보들을 받아서 갱신한다
 			int bullet_index = 0;
-
 			char *line = strtok(buf, "\n");
 			while(line != NULL) {
-				if (sscanf(buf, "LOCAL_BULLET_INO,x=%d,y=%d,dx=%d,dy=%d",
+				if (sscanf(buf, "LOCAL_BULLET_INFO,x=%d,y=%d,dx=%d,dy=%d",
 					&bullet_x, &bullet_y, &bullet_dx, &bullet_dy) == 4) {
 					np->bullets[cur_client_num].bullet_info[bullet_index].x = bullet_x;
 					np->bullets[cur_client_num].bullet_info[bullet_index].y = bullet_y;
@@ -335,25 +333,22 @@ void *threadfunc(void *vargp) {
 			
 			memset(bullet_location, '\0', sizeof(bullet_location));
 			for(int i=0; i<10; i++) {
+	
+				// 네트워크가 연결되어있다면
+				if (np->ns[i] > 0) {
+					// 해당 클라이언트의 총알 정보를 읽어서 하나의 배열에 저장한다
+					for (int j=0; j<10; j++) {
+						memset(buf, '\0', sizeof(buf));
+						sprintf(buf, "%d,x=%d,y=%d,dx=%d,dy=%d\n", 
+							i, 
+							np->bullets[i].bullet_info[j].x,
+							np->bullets[i].bullet_info[j].y,
+							np->bullets[i].bullet_info[j].dx,
+							np->bullets[i].bullet_info[j].dy);
 
-				// 현재 서버와 통신 중인 클라이언트가 아니며
-				
-					// 네트워크가 연결되어있다면
-					if (np->ns[i] > 0) {
-						// 해당 클라이언트의 총알 정보를 읽어서 하나의 배열에 저장한다
-						for (int j=0; j<10; j++) {
-							memset(buf, '\0', sizeof(buf));
-							sprintf(buf, "%d,x=%d,y=%d,dx=%d,dy=%d\n", 
-								i, 
-								np->bullets[i].bullet_info[j].x,
-								np->bullets[i].bullet_info[j].y,
-								np->bullets[i].bullet_info[j].dx,
-								np->bullets[i].bullet_info[j].dy);
-
-							strncat(bullet_location, buf, strlen(buf));
-							printf("i,j : %d %d\n", i, j);
-						}
+						strncat(bullet_location, buf, strlen(buf));
 					}
+				}
 				
 			}
 
@@ -366,9 +361,6 @@ void *threadfunc(void *vargp) {
 
 			printf("총알 정보 수신 중\n");
 		}
-
-		printf("test13\n");
-
 
 	}
 
