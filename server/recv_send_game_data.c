@@ -47,7 +47,7 @@ int recv_send_game_data(network_player *np, char *buf, int cur_client_num) {
 					i, np->players[i].x, np->players[i].y, np->players[i].skin,
 					np->players[i].hp, np->players[i].is_dead);
 			} else {
-				sprintf(buf1, "%d,x=-10,y=-10,skin=0,hp=0,is_dead=0\n", i);
+				sprintf(buf1, "%d,x=-10,y=-10,skin=0,hp=3,is_dead=0\n", i);
 			}
 		} else {
 			memset(buf1, '\0', sizeof(buf));

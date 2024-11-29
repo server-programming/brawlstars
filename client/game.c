@@ -27,14 +27,14 @@ void draw_game_screen(Player* players, int selected_skin, int sd) {
     draw_map(); // 맵 그리기
     draw_player_hp(&players[0]);
     draw_players(players, MAX_PLAYERS, selected_skin, sd);
-    draw_bullets(sd);
+    // draw_bullets(sd);
 
 }
 void process_game_input(int sd, Player* player) {
     char ch = getch();
-    debug_bullets(ch, sd);
+    // debug_bullets(ch, sd);
     move_player(player, ch);
-    shoot_bullet(player->x, player->y, player->dir, player->skin, ch);
+    // shoot_bullet(player->x, player->y, player->dir, player->skin, ch);
 }
 
 // 게임 초기화 및 루프
