@@ -59,7 +59,7 @@ int recv_send_game_data(network_player *np, char *buf, int cur_client_num) {
 		}
 	}
 
-	printf("%s\n", player_pos);
+	//printf("%s\n", player_pos);
 
 	if (connect_to_client(np->ns[cur_client_num], cur_client_num, player_pos, 2) == 0) {
 		return 0;
