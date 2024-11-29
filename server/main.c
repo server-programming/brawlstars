@@ -166,7 +166,6 @@ void *manage_room(void *vargp) {
 void *threadfunc(void *vargp) {
 	char buf[1024];
 	char player_pos[1024];
-	char buf1[1024];
 	int network_status;
 	int client_x;
 	int client_y;
@@ -194,6 +193,8 @@ void *threadfunc(void *vargp) {
 		} else if (network_status == 0) {
 			break;
 		}
+
+		printf("%s\n", buf);
 
 		// 클라이언트가 서버와 연결될 경우 고유번호를 전송한다
 		if (strstr(buf, "GET_CLIENT_UNIQUE_NUM") != NULL) {
@@ -296,16 +297,20 @@ void *threadfunc(void *vargp) {
 
 		// 클라이언트가 게임에 접속하는 경우
 		if (strstr(buf, "ACCESS_TO_GAME") != NULL) {
-
+			
 			if (recv_send_game_data(np, buf, cur_client_num) == 0) {
 				break;
 			}
+
+			printf("test\n");
 		}
 
 		if (strstr(buf, "LOCAL_BULLET_INFO") != NULL) {
-			
+			printf("test1\n");
 			printf("%s\n", buf);
 		}
+
+
 	}
 
 	if (is_matching) {
