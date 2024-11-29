@@ -145,15 +145,33 @@ void draw_bullets(int sd) {
     }
 }
 
-// 총알 이동
 void update_bullets() {
-    // 로컬 총알 이동
+    // 로컬 총알 이동 및 충돌 처리
     for (int i = 0; i < local_bullet_count; i++) {
         move_bullet(&local_bullets[i]);
+        // 로컬 총알 충돌 체크
+        if (is_bullet_collision(local_bullets[i].x, local_bullets[i].y)) {
+            // 충돌 시 총알 제거
+            for (int j = i; j < local_bullet_count - 1; j++) {
+                local_bullets[j] = local_bullets[j + 1];
+            }
+            local_bullet_count--;
+            i--;  // 인덱스 재조정
+        }
     }
-    // 서버로부터 받은 원격 총알 이동
-    for (int i = 0; i < remote_bullet_count; i++) { 
+
+    // 서버로부터 받은 원격 총알 이동 및 충돌 처리
+    for (int i = 0; i < remote_bullet_count; i++) {
         move_bullet(&remote_bullets[i]);
+        // 원격 총알 충돌 체크
+        if (is_bullet_collision(remote_bullets[i].x, remote_bullets[i].y)) {
+            // 충돌 시 원격 총알 제거
+            for (int j = i; j < remote_bullet_count - 1; j++) {
+                remote_bullets[j] = remote_bullets[j + 1];
+            }
+            remote_bullet_count--;
+            i--;  // 인덱스 재조정
+        }
     }
 }
 
