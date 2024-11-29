@@ -164,8 +164,9 @@ void *manage_room(void *vargp) {
 
 
 void *threadfunc(void *vargp) {
-	char buf[50];
-	char player_pos[200];
+	char buf[1024];
+	char player_pos[1024];
+	char buf1[1024];
 	int network_status;
 	int client_x;
 	int client_y;
@@ -299,6 +300,11 @@ void *threadfunc(void *vargp) {
 			if (recv_send_game_data(np, buf, cur_client_num) == 0) {
 				break;
 			}
+		}
+
+		if (strstr(buf, "LOCAL_BULLET_INFO") != NULL) {
+			
+			printf("%s\n", buf);
 		}
 	}
 
