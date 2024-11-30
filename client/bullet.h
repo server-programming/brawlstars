@@ -11,6 +11,7 @@
 typedef struct {
     int x, y;  // 총알의 좌표
     int dx, dy; // 총알 이동 방향
+    int is_active; // 총알의 비활성화 상태
 } Bullet;
 
 // 총알 발사 함수
@@ -31,7 +32,5 @@ int is_bullet_collision(int x, int y);
 // 서버와의 총알 송수신 관련 함수
 int send_local_bullets(int sd); // 로컬 총알을 서버로 전송
 int recv_remote_bullets(int sd); // 서버로부터 원격 총알 수신
-
-void debug_bullets(char ch, int sd);
 #endif
 

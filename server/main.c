@@ -25,6 +25,7 @@ typedef struct player {
 typedef struct bullet {
 	int x, y;
 	int dx, dy;
+    int is_active;
 } bullet;
 
 typedef struct {
@@ -186,6 +187,7 @@ void *threadfunc(void *vargp) {
 	int bullet_y;
 	int bullet_dx;
 	int bullet_dy;
+    int bullet_is_active;
 
 	// 클라이언트가 로비에 처음 접속하는지 확인하기 위한 변수
 	int access_to_lobby = 1;
@@ -314,17 +316,20 @@ void *threadfunc(void *vargp) {
 		}
         
 		if (strstr(buf, "LOCAL_BULLET_INFO") != NULL) {
-
+                // 총알 정보를 초기화 (클라이언트 번호에 해당하는 총알 정보 초기화)
+            memset(np->bullets[cur_client_num].bullet_info, 0, sizeof(np->bullets[cur_client_num].bullet_info));
+            
 			// 클라이언트로부터 총알 정보들을 받아서 갱신한다
 			int bullet_index = 0;
 			char *line = strtok(buf, "\n");
 			while(line != NULL) {
-				if (sscanf(buf, "LOCAL_BULLET_INFO,x=%d,y=%d,dx=%d,dy=%d",
-					&bullet_x, &bullet_y, &bullet_dx, &bullet_dy) == 4) {
+				if (sscanf(buf, "LOCAL_BULLET_INFO,x=%d,y=%d,dx=%d,dy=%d,is_active=%d",
+					&bullet_x, &bullet_y, &bullet_dx, &bullet_dy, &bullet_is_active) == 5) {
 					np->bullets[cur_client_num].bullet_info[bullet_index].x = bullet_x;
 					np->bullets[cur_client_num].bullet_info[bullet_index].y = bullet_y;
 					np->bullets[cur_client_num].bullet_info[bullet_index].dx = bullet_dx;
 					np->bullets[cur_client_num].bullet_info[bullet_index].dy = bullet_dy;
+                    np->bullets[cur_client_num].bullet_info[bullet_index].is_active = bullet_is_active;
 
 					bullet_index++;
 				}
@@ -339,12 +344,13 @@ void *threadfunc(void *vargp) {
 					// 해당 클라이언트의 총알 정보를 읽어서 하나의 배열에 저장한다
 					for (int j=0; j<10; j++) {
 						memset(buf, '\0', sizeof(buf));
-						sprintf(buf, "%d,x=%d,y=%d,dx=%d,dy=%d\n", 
+						sprintf(buf, "%d,x=%d,y=%d,dx=%d,dy=%d,is_active=%d\n", 
 							i, 
 							np->bullets[i].bullet_info[j].x,
 							np->bullets[i].bullet_info[j].y,
 							np->bullets[i].bullet_info[j].dx,
-							np->bullets[i].bullet_info[j].dy);
+							np->bullets[i].bullet_info[j].dy,
+                            np->bullets[i].bullet_info[j].is_active);
 
 						strncat(bullet_location, buf, strlen(buf));
 					}
