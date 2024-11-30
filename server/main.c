@@ -136,7 +136,7 @@ void *manage_room(void *vargp) {
 
 					// 매칭된 유저들의 정보 확인
 					for(int j=0; j<MATCHING_NUM; j++) {
-						printf("%d번 방에 들어간 클라이언트:%d\n", i, np->ns[room[i].client_id[j]]);
+						printf("%d번 방에 들어간 클라이언트:%d\n", i, room[i].client_id[j]);
 					}
 					break;
 				}
@@ -194,7 +194,7 @@ void *threadfunc(void *vargp) {
 			break;
 		}
 
-		printf("%s\n", buf);
+		printf("클라이언트 %d의 메시지: %s\n", cur_client_num, buf);
 
 		// 클라이언트가 서버와 연결될 경우 고유번호를 전송한다
 		if (strstr(buf, "GET_CLIENT_UNIQUE_NUM") != NULL) {
@@ -202,7 +202,7 @@ void *threadfunc(void *vargp) {
 			if (connect_to_client(np->ns[cur_client_num], cur_client_num, buf, 1) == 0) {
 				break;
 			}
-			printf("Client %d start game\n", cur_client_num);
+			printf("클라이언트  %d이(가) 접속함\n", cur_client_num);
 		}
 
 		// 클라이언트가 로비에 접속하는 경우 동접자 수를 늘린다
@@ -238,7 +238,7 @@ void *threadfunc(void *vargp) {
 			for(int i=0; i<MATCHING_NUM; i++) {
 				if (ready_client[i] == -1) {
 					
-					printf("대기열 %d번 위치에 클라이언트 정보 저장\n", i);
+					printf("대기열 %d번 위치에 클라이언트 %d의 정보 저장\n", i, cur_client_num);
 					// 대기열에 클라이언트 고유 번호 저장
 					ready_client[i] = cur_client_num;
 					ready_client_num += 1;
@@ -306,7 +306,7 @@ void *threadfunc(void *vargp) {
 		// 클라이언트가 총알 정보를 보내는 경우
 		if (strstr(buf, "LOCAL_BULLET_INFO") != NULL) {
                 // 총알 정보를 초기화 (클라이언트 번호에 해당하는 총알 정보 초기화)
-            memset(np->bullets[cur_client_num].bullet_info, 0, sizeof(np->bullets[cur_client_num].bullet_info));
+            	memset(np->bullets[cur_client_num].bullet_info, 0, sizeof(np->bullets[cur_client_num].bullet_info));
             
 			// 클라이언트로부터 총알 정보들을 받아서 갱신한다
 			int bullet_index = 0;
@@ -318,7 +318,7 @@ void *threadfunc(void *vargp) {
 					np->bullets[cur_client_num].bullet_info[bullet_index].y = bullet_y;
 					np->bullets[cur_client_num].bullet_info[bullet_index].dx = bullet_dx;
 					np->bullets[cur_client_num].bullet_info[bullet_index].dy = bullet_dy;
-                    np->bullets[cur_client_num].bullet_info[bullet_index].is_active = bullet_is_active;
+                    			np->bullets[cur_client_num].bullet_info[bullet_index].is_active = bullet_is_active;
 
 					bullet_index++;
 				}
@@ -339,7 +339,7 @@ void *threadfunc(void *vargp) {
 							np->bullets[i].bullet_info[j].y,
 							np->bullets[i].bullet_info[j].dx,
 							np->bullets[i].bullet_info[j].dy,
-                            np->bullets[i].bullet_info[j].is_active);
+                            				np->bullets[i].bullet_info[j].is_active);
 
 						strncat(bullet_location, buf, strlen(buf));
 					}
@@ -353,8 +353,6 @@ void *threadfunc(void *vargp) {
 			if (connect_to_client(np->ns[cur_client_num], cur_client_num, bullet_location, 2) == 0) {
 				break;
 			}
-
-			printf("총알 정보 수신 중\n");
 		}
 	}
 
@@ -368,7 +366,7 @@ void *threadfunc(void *vargp) {
 
 
 	// 클라이언트가 오프라인 상태이므로 해당 클라이언트가 쓰던 정보들을 초기화 
-	printf("client %d is offline\n", cur_client_num);
+	printf("클라이언트 %d가 접속을 종료함\n", cur_client_num);
 	close(np->ns[cur_client_num]);
 	np->ns[cur_client_num] = 0;
 	np->players[cur_client_num].x = -10;
@@ -416,8 +414,8 @@ int main() {
 		for(int j=0; j<10; j++) {
 			bullet_info[j].x = -1;
 			bullet_info[j].y = -1;
-			bullet_info[j].dx = 0;
-			bullet_info[j].dy = 0;
+			bullet_info[j].dx = -1;
+			bullet_info[j].dy = -1;
 		}
 
 		bullets[i].bullet_info = bullet_info;
