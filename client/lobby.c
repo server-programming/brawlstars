@@ -96,16 +96,35 @@ void lobby(int sd, int client_num) {
         }
         // 매칭 시작 또는 취소 처리
         else if (input_result == 2) {
+
+		
+		// -- 서버에게 매칭 요청을 보낸다
+		char buf[1024];
+		memset(buf, '\0', sizeof(buf));
+		sprintf(buf, "GET_READY_USER");
+		send(sd, buf, strlen(buf), 0);
+
+
             while (1) {
+
                 gettimeofday(&start, NULL);
-                is_matched = 1; // 서버에서 매칭이 아직 안 됨
                 gettimeofday(&end, NULL);
                 ping = get_ms(start, end);
 
-                // 매칭 대기 중일 때 화면을 갱신하고 계속 입력받을 수 있도록 변경
-                if (is_matched == 0) {
-                    break; // 매칭 대기 상태에서 빠져나오기 위해 while문을 탈출
-                }
+		memset(buf, '\0', sizeof(buf));
+		recv(sd, buf, sizeof(buf), 0);
+
+
+		// 서버로부터 매칭 중이므로 대기하라는 메시지를 받게 될 경우
+		if (strstr(buf, "WAIT_FOR_MATCH") != NULL) {
+			is_matched = 0;
+		}
+
+
+		// 서버로부터 매칭이 되었으므로 게임으로 넘어가라는 메시지를 받게 될 경우  
+		if (strstr(buf, "GAME_MATCHED") != NULL) {
+			is_matched = 1;
+		}
 
                 if (is_matched == 1) {                     
                     init_game(sd, client_num, selected_skin); // 게임 시작

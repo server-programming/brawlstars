@@ -10,7 +10,7 @@
 
 #define PORTNUM 12312
 #define MAX_PLAYER 1000
-#define MATCHING_NUM 10
+#define MATCHING_NUM 1 
 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
@@ -278,16 +278,14 @@ void *threadfunc(void *vargp) {
 				// 서버는 클라이언트에게 WAIT_FOR_MATCHING 메시지를 보내 클라이언트가 기다리게 한다
 				// 클라이언트는 서버로부터 계속 WAIT_FOR_MATCH 메시지를 받으면서 대기한다
 
-				//if (connect_to_client(np->ns[cur_client_num], cur_client_num, buf, 1) == 0) {
+				if (connect_to_client(np->ns[cur_client_num], cur_client_num, buf, 1) == 0) {
 					// 클라이언트가 도중에 연결이 끊길 수 있으므로
-				//	status = 0;
-				//	break;
-				//}
+					status = 0;
+					break;
+				}
 			}
 
 			sleep(2);
-
-			printf("클라이언트 %d가 %d번 방에 매칭 되었음\n", cur_client_num, np->room_index[cur_client_num]);
 
 			is_matching = 0;
 
@@ -296,9 +294,13 @@ void *threadfunc(void *vargp) {
 				memset(buf, '\0', sizeof(buf));
 				sprintf(buf, "GAME_MATCHED\n");
 
+				printf("클라이언트 %d가 %d번 방에 매칭되었음\n", cur_client_num, np->room_index[cur_client_num]);
+				
+				// 클라이언트에게 매칭이 되었으므로 게임으로 넘어가라는 메시지를 전송한다
 				if (connect_to_client(np->ns[cur_client_num], cur_client_num, buf, 1) == 0) {
 					break;
 				}
+
 			} else {
 				ready_client[ready_index] = -1;
 				ready_client_num -= 1;
@@ -315,6 +317,7 @@ void *threadfunc(void *vargp) {
 			}
 		}
         
+		// 클라이언트가 총알 정보를 보내는 경우
 		if (strstr(buf, "LOCAL_BULLET_INFO") != NULL) {
                 // 총알 정보를 초기화 (클라이언트 번호에 해당하는 총알 정보 초기화)
             memset(np->bullets[cur_client_num].bullet_info, 0, sizeof(np->bullets[cur_client_num].bullet_info));
@@ -337,7 +340,7 @@ void *threadfunc(void *vargp) {
 			}
 			
 			memset(bullet_location, '\0', sizeof(bullet_location));
-			for(int i=0; i<10; i++) {
+			for(int i=0; i<MATCHING_NUM; i++) {
 	
 				// 네트워크가 연결되어있다면
 				if (np->ns[i] > 0) {
@@ -369,18 +372,26 @@ void *threadfunc(void *vargp) {
 		}
 	}
 
+	
+	// 클라이언트가 매칭 도중 오프라인 상태가 되었다면
 	if (is_matching) {
 		ready_client[ready_index] = -1;
 		ready_client_num -= 1;
 		printf("매칭 취소 현재 대기 중인 클라이언트의 수 %d\n", ready_client_num);
 	}
 
+
+	// 클라이언트가 오프라인 상태이므로 해당 클라이언트가 쓰던 정보들을 초기화 
 	printf("client %d is offline\n", cur_client_num);
-	cur_player--;
 	close(np->ns[cur_client_num]);
 	np->ns[cur_client_num] = 0;
-	np->players[cur_client_num].x = 0;
-	np->players[cur_client_num].y = 0;
+	np->players[cur_client_num].x = -10;
+	np->players[cur_client_num].y = -10;
+
+	// 클라이언트가 동접자 수에 포함됐었다면 동접자 수를 줄이고, 그렇지 않다면 동접자 수를 그대로 유지한다
+	if (access_to_lobby != 1) {
+		cur_player -= 1;
+	}
 
 	return NULL;
 }
