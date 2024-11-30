@@ -24,7 +24,7 @@ Player* init_player(int x, int y, int dir, wchar_t* skin, int is_local) {
     new_player->skin = skin; // 플레이어 스킨
     new_player->hp = 3; // 플레이어 체력
     new_player->is_dead = 0; // 플레이어 사망 여부
-    new_player->rank = -1; // 플레이어 체력
+    new_player->rank = -1; // 플레이어 순위
     new_player->is_local = is_local;
 
     return new_player;
@@ -97,11 +97,11 @@ void update_player_info(Player* player, int x, int y, int dir, int skin_index, i
     player->hp = hp; // 플레이어 체력
     player->is_dead = is_dead; // 플레이어 사망 여부
     player->rank = rank; // 플레이어 순위
-    player->is_local = is_local; // 플레이어 색상?
+    player->is_local = is_local; // 플레이어 로컬 여부
 }
 
 // 색상 구분된 플레이어 그리기 함수
-void draw_player(Player* player) {   
+void draw_player(Player* player) {
     if (player->is_local) {
         mvaddwstr(player->y, player->x, player->skin);
     } else {
@@ -120,6 +120,7 @@ void draw_players(Player players[], int players_num, int selected_skin, int sd) 
         draw_player(&players[i]);
     }
 }
+
 // 플레이어 이동 함수
 void move_player(Player* player, int ch) {
     int old_x = player->x, old_y = player->y;
@@ -135,6 +136,7 @@ void move_player(Player* player, int ch) {
     }
 }
 
+// 피격 처리 함수
 void player_hit(Player* player) {
     player->hp--;
     if (player->hp <= 0) {
@@ -143,6 +145,7 @@ void player_hit(Player* player) {
     }
 }
 
+// 플레이어 HP 출력 함수
 void draw_player_hp(Player* player) {
     mvprintw(0, 0, "HP: %d", player->hp);
 }

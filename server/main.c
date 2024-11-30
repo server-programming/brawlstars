@@ -411,8 +411,8 @@ int main() {
 		bullet_info = (bullet *)malloc(sizeof(bullet) * 10);
 
 		for(int j=0; j<10; j++) {
-			bullet_info[j].x = 0;
-			bullet_info[j].y = 0;
+			bullet_info[j].x = -1;
+			bullet_info[j].y = -1;
 			bullet_info[j].dx = 0;
 			bullet_info[j].dy = 0;
 		}

@@ -34,10 +34,14 @@ void move_bullet(Bullet* b) {
     b->y += b->dy;
 }
 
-// 플레이어 피격 처리 함수
-int is_player_hit(int bullet_x, int bullet_y, int player_x, int player_y, wchar_t *player_shape) {
-    int player_width = wcslen(player_shape);
-    return (bullet_y == player_y && bullet_x >= player_x && bullet_x < player_x + player_width);
+int is_player_hit(int bullet_x, int bullet_y, Player* player) {
+    int player_width = wcslen(player->skin);
+    if (bullet_y == player->y && bullet_x >= player->x && bullet_x < player->x + player_width) {
+        player->hp--;
+        return 1; // 충돌
+    }
+
+    return 0; // 충돌 없음
 }
 
 // 로컬 총알 발사 처리
@@ -121,7 +125,7 @@ int recv_remote_bullets(int sd) {
 }
 
 // 총알 그리기
-void draw_bullets(int sd) {
+void draw_bullets(int sd, Player players[]) {
     
     // 서버로 총알 정보를 전송
     if (send_local_bullets(sd) != 0) {
@@ -133,7 +137,7 @@ void draw_bullets(int sd) {
         return;
     }
     
-    update_bullets();
+    update_bullets(players);
     // 로컬 총알 그리기
     for (int i = 0; i < local_bullet_count; i++) {
         mvaddch(local_bullets[i].y, local_bullets[i].x, '*');
@@ -145,7 +149,7 @@ void draw_bullets(int sd) {
     }
 }
 
-void update_bullets() {
+void update_bullets(Player players[]) {
     // 로컬 총알 이동 및 충돌 처리
     for (int i = 0; i < local_bullet_count; i++) {
         move_bullet(&local_bullets[i]);
@@ -157,6 +161,16 @@ void update_bullets() {
             }
             local_bullet_count--;
             i--;  // 인덱스 재조정
+        }
+
+        for (int j = 0; j < 4; j++) {
+            if (is_player_hit(local_bullets[i].x, local_bullets[i].y, &players[j])) {
+                for (int k = i; k < local_bullet_count - 1; k++) {
+                    local_bullets[k] = local_bullets[k + 1];
+                }
+                local_bullet_count--;
+                i--;
+            } 
         }
     }
 
@@ -171,6 +185,16 @@ void update_bullets() {
             }
             remote_bullet_count--;
             i--;  // 인덱스 재조정
+        }
+        for (int j = 0; j < 4; j++) {
+            if (is_player_hit(remote_bullets[i].x, remote_bullets[i].y, &players[j])) {
+                // 충돌 시 원격 총알 제거
+                for (int j = i; j < remote_bullet_count - 1; j++) {
+                    remote_bullets[j] = remote_bullets[j + 1];
+                }
+                remote_bullet_count--;
+                i--;
+            }
         }
     }
 }

@@ -20,10 +20,10 @@ void shoot_bullet(int x, int y, int direction, wchar_t* player_shape, int ch);
 void move_bullets(Player* player, int sd); 
 
 // 총알 그리기 함수
-void draw_bullets(int sd); 
+void draw_bullets(int sd, Player players[]); 
 
 // 총알 이동 & 그리기
-void update_bullets();
+void update_bullets(Player players[]);
 
 // 총알 충돌 검사 함수
 int is_bullet_collision(int x, int y); 

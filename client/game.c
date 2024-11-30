@@ -27,7 +27,7 @@ void draw_game_screen(Player* players, int selected_skin, int sd) {
     draw_map(); // 맵 그리기
     draw_player_hp(&players[0]);
     draw_players(players, MAX_PLAYERS, selected_skin, sd);
-    draw_bullets(sd);
+    draw_bullets(sd, players);
 
 }
 void process_game_input(int sd, Player* player) {
