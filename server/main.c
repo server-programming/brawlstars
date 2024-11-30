@@ -173,7 +173,7 @@ void *threadfunc(void *vargp) {
 	int bullet_y;
 	int bullet_dx;
 	int bullet_dy;
-    int bullet_is_active;
+    	int bullet_is_active;
 
 	// 클라이언트가 로비에 처음 접속하는지 확인하기 위한 변수
 	int access_to_lobby = 1;
@@ -253,17 +253,12 @@ void *threadfunc(void *vargp) {
 			sprintf(buf, "WAIT_FOR_MATCH");
 			while(1) {
 
-
-				// 클라이언트가 대기 중에 오프라인이 되었을 경우에 대해서도 코드 필요함
-				//
-
 				if (ready_client_num == MATCHING_NUM) {
 					break;
 				}
 
 				// 서버는 클라이언트에게 WAIT_FOR_MATCHING 메시지를 보내 클라이언트가 기다리게 한다
 				// 클라이언트는 서버로부터 계속 WAIT_FOR_MATCH 메시지를 받으면서 대기한다
-
 				if (connect_to_client(np->ns[cur_client_num], cur_client_num, buf, 1) == 0) {
 					// 클라이언트가 도중에 연결이 끊길 수 있으므로
 					status = 0;
@@ -288,6 +283,7 @@ void *threadfunc(void *vargp) {
 				}
 
 			} else {
+				// 클라이언트가 매칭 중에 연결을 취소한 경우
 				ready_client[ready_index] = -1;
 				ready_client_num -= 1;
 				printf("매칭 취소 현재 대기 중인 클라이언트의 수 %d\n", ready_client_num);
@@ -329,17 +325,19 @@ void *threadfunc(void *vargp) {
 			for(int i=0; i<MATCHING_NUM; i++) {
 	
 				// 네트워크가 연결되어있다면
-				if (np->ns[i] > 0) {
+				if (np->ns[room[np->room_index[cur_client_num]].client_id[i]] > 0) {
 					// 해당 클라이언트의 총알 정보를 읽어서 하나의 배열에 저장한다
+					// 너무 변수 인덱스들이 많아져서 수정 좀 해야할듯
 					for (int j=0; j<10; j++) {
 						memset(buf, '\0', sizeof(buf));
 						sprintf(buf, "%d,x=%d,y=%d,dx=%d,dy=%d,is_active=%d\n", 
-							i, 
-							np->bullets[i].bullet_info[j].x,
-							np->bullets[i].bullet_info[j].y,
-							np->bullets[i].bullet_info[j].dx,
-							np->bullets[i].bullet_info[j].dy,
-                            				np->bullets[i].bullet_info[j].is_active);
+							room[np->room_index[cur_client_num]].client_id[i], 
+							np->bullets[room[np->room_index[cur_client_num]].client_id[i]].bullet_info[j].x,
+							np->bullets[room[np->room_index[cur_client_num]].client_id[i]].bullet_info[j].y,
+							np->bullets[room[np->room_index[cur_client_num]].client_id[i]].bullet_info[j].dx,
+							np->bullets[room[np->room_index[cur_client_num]].client_id[i]].bullet_info[j].dy,
+							np->bullets[room[np->room_index[cur_client_num]].client_id[i]].bullet_info[j].is_active
+						);
 
 						strncat(bullet_location, buf, strlen(buf));
 					}
@@ -381,7 +379,6 @@ void *threadfunc(void *vargp) {
 }
 
 int main() {
-	char buf[256];
 	struct sockaddr_in cli;
 	int sd;
 	int *ns;
