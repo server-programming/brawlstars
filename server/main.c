@@ -10,7 +10,7 @@
 
 #define PORTNUM 12312
 #define MAX_PLAYER 1000
-#define MATCHING_NUM 1 
+#define MATCHING_NUM 2 
 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
@@ -57,7 +57,7 @@ typedef struct {
 // 게임 방 구조체
 typedef struct {
 	// 게임에 참여하는 10명의 정보를 담을 구조체 배열
-	network_player *np_room;
+	int client_id[MATCHING_NUM];
 	int is_empty;
 } room_info;
 
@@ -82,7 +82,7 @@ int connect_to_client(int ns, int cur_client_num, char *buf, int flag);
 int cur_player = 0;
 
 // 게임에 접속하면 클라이언트와 서버의 데이터 전송을 이 함수가 관여함 recv_send_game_data.c
-int recv_send_game_data(network_player *np, char *buf, int cur_client_num);
+int recv_send_game_data(network_player *np, char *buf, int cur_client_num, room_info *room, int player_in_room);
 
 
 // 게임 방 정보를 관리할 쓰레드 함수
@@ -97,23 +97,10 @@ void *manage_room(void *vargp) {
 
 	// 모든 게임 방에 10명의 플레이어 정보를 받을 수 있도록 공간 할당
 	for(int i=0; i<room_num; i++) {
-
-		int *ns;
-		network_player *np_room_new;
-		player *p;
-		int *room_index;
-
-		ns = (int *)malloc(sizeof(int) * MATCHING_NUM);
-		p = (player *)malloc(sizeof(player) * MATCHING_NUM);
-		room_index = (int *)malloc(sizeof(int) * MATCHING_NUM);
-
-		np_room_new = (network_player *)malloc(sizeof(network_player));
-
-		np_room_new->ns = ns;
-		np_room_new->players = p;
-		np_room_new->room_index = room_index;
-
-		room[i].np_room = np_room_new;
+		
+		for(int j=0; j<MATCHING_NUM; j++) {
+			room[i].client_id[j] = -1;
+		}
 		room[i].is_empty = 1;
 	}
 
@@ -137,9 +124,8 @@ void *manage_room(void *vargp) {
 					// 해당 방에 대기 중이었던 유저들의 정보를 저장한다
 					// ready_client에 인덱스로 접근하면 현재 대기 중인 클라이언트의 고유 번호를 확인할 수 있다
 					for (int j = 0; j < MATCHING_NUM; j++) {
-						room[i].np_room->ns[j] = np->ns[ready_client[j]];
-						room[i].np_room->players[j] = np->players[ready_client[j]];
-						room[i].np_room->room_index[j] = i;
+
+						room[i].client_id[j] = ready_client[j];
 						np->room_index[ready_client[j]] = i;
 					}
 
@@ -150,7 +136,7 @@ void *manage_room(void *vargp) {
 
 					// 매칭된 유저들의 정보 확인
 					for(int j=0; j<MATCHING_NUM; j++) {
-						printf("%d번 방에 들어간 클라이언트:%d\n", i, room[i].np_room->ns[j]);
+						printf("%d번 방에 들어간 클라이언트:%d\n", i, np->ns[room[i].client_id[j]]);
 					}
 					break;
 				}
@@ -312,7 +298,7 @@ void *threadfunc(void *vargp) {
 
 		// 클라이언트가 게임에 접속하는 경우
 		if (strstr(buf, "ACCESS_TO_GAME") != NULL) {
-			if (recv_send_game_data(np, buf, cur_client_num) == 0) {
+			if (recv_send_game_data(np, buf, cur_client_num, &room[np->room_index[cur_client_num]], MATCHING_NUM) == 0) {
 				break;
 			}
 		}
