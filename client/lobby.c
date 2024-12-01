@@ -55,23 +55,22 @@ int get_input_and_process(int *selected_skin, int *is_matching) {
 
 // 게임 대기 화면과 매칭 처리
 void lobby(int sd, int client_num) {
-    int concurrent_users = -1;  // 동접자 수
-    int is_matching = 0;  // 매칭 중인지 여부
-    int is_matched = 0;  // 게임 매칭 여부
-    int is_matching_started = 0; // 매칭을 시작했는지 여부
-    struct timeval start, end;  // 응답 측정 시작 시간, 응답 측정 종료 시간
+    int concurrent_users = -1; // 동접자 수
+    int is_matching = 0; // 매칭 중인지 여부
+    int is_matched = 0; // 게임 매칭 여부
+    struct timeval start, end; // 응답 측정 시작 시간, 응답 측정 종료 시간
     long long ping;
     int selected_skin = 0;
 
     while (1) {
         // 응답 속도 측정
         gettimeofday(&start, NULL);
-        concurrent_users = get_concurrent_users(sd);  // 동접자 수 저장
-        gettimeofday(&end, NULL);  // 응답 속도 측정 종료
-        ping = get_ms(start, end);  // 핑 계산
+        concurrent_users = get_concurrent_users(sd); // 동접자 수 저장
+        gettimeofday(&end, NULL); // 응답 속도 측정 종료
+        ping = get_ms(start, end); // 핑 계산
 
         // 화면을 지우지 않고 갱신
-        clear();  // 화면을 지운 후에 계속해서 출력되도록 할 수 있습니다.
+        clear(); // 화면을 지운 후에 계속해서 출력되도록 할 수 있습니다.
 
         // 스킨 선택
         PlayerShape *player_shapes = get_player_shape();
@@ -89,6 +88,7 @@ void lobby(int sd, int client_num) {
 
         // 입력 받아 처리
         int input_result = get_input_and_process(&selected_skin, &is_matching);
+
         // 캐릭터 선택된 경우
         if (input_result == 1) {
             // 캐릭터가 선택되면 화면에 계속 유지됨
@@ -96,82 +96,72 @@ void lobby(int sd, int client_num) {
         }
         // 매칭 시작 또는 취소 처리
         else if (input_result == 2) {
-            // -- 서버에게 매칭 요청을 보낸다
-            char buf[1024];
-            
-            if (is_matching_started == 0) {
-                memset(buf, '\0', sizeof(buf));
-                sprintf(buf, "GET_READY_USER");
-                if (send(sd, buf, strlen(buf), 0) == -1) {
-                    perror("send for GET_READY_USER");
-                    exit(1);
-                };
-                is_matching_started = 1;
-            }
-            
-            memset(buf, '\0', sizeof(buf));
-            
-            /*                
-            recv(sd, buf, sizeof(buf), 0);
 
-            // 서버로부터 매칭 중이므로 대기하라는 메시지를 받게 될 경우
-            if (strstr(buf, "WAIT_FOR_MATCH") != NULL) {
-                is_matched = 0;
-            }
-                
-            // 서버로부터 매칭이 되었으므로 게임으로 넘어가라는 메시지를 받게 될 경우
-            if (strstr(buf, "GAME_MATCHED") != NULL) {
-                is_matching = 0; // 매칭 취소 상태로 되돌리기
-                is_matching_started = 0; 
-                is_matched = 1; // 매칭 완료
-            }
-                
-            if (is_matched == 1) {
+		
+		// -- 서버에게 매칭 요청을 보낸다
+		char buf[1024];
+		memset(buf, '\0', sizeof(buf));
+		sprintf(buf, "GET_READY_USER");
+		send(sd, buf, strlen(buf), 0);
+
+
+            while (1) {
+
+                gettimeofday(&start, NULL);
+                gettimeofday(&end, NULL);
+                ping = get_ms(start, end);
+
+		memset(buf, '\0', sizeof(buf));
+		recv(sd, buf, sizeof(buf), 0);
+
+
+		// 서버로부터 매칭 중이므로 대기하라는 메시지를 받게 될 경우
+		if (strstr(buf, "WAIT_FOR_MATCH") != NULL) {
+			is_matched = 0;
+		}
+
+
+		// 서버로부터 매칭이 되었으므로 게임으로 넘어가라는 메시지를 받게 될 경우  
+		if (strstr(buf, "GAME_MATCHED") != NULL) {
+			is_matched = 1;
+		}
+
+                if (is_matched == 1) {                     
+                    init_game(sd, client_num, selected_skin); // 게임 시작
                     break;
+                }
             }
-            */
         }
         // 매칭 취소
         else if (input_result == 4) {
-            is_matching = 0;  // 매칭 취소 상태로 되돌리기
+            is_matching = 0; // 매칭 취소 상태로 되돌리기
         }
         // 게임 종료
         else if (input_result == 3) {
-            break;  // 게임 종료 (ESC)
+            break; // 게임 종료 (ESC)
         }
 
-         
-        print_lobby_status(concurrent_users, ping, is_matching, is_matched);
+        // 동접자 수와 매칭 여부 출력
+        if (concurrent_users == -1) { // 동접자 수를 가져오지 못한 경우
+            mvprintw(10, COLS / 2 - 10, "Failed to get concurrent users.");
+        } else {
+            print_lobby_status(concurrent_users, ping, is_matching); // 상태 출력
+        }
 
-        refresh();  // 화면 갱신
-        napms(10);
-        
+        refresh(); // 화면 갱신
+        sleep(1);
     }
-    init_game(sd, client_num, selected_skin);
 }
 
 // 게임 대기열 상태 출력 함수
-void print_lobby_status(int concurrent_users, long long ping, int is_matching, int is_matched) {
+void print_lobby_status(int concurrent_users, long long ping, int is_matching) {
     // 동시 접속자 수 출력
     wchar_t wstr[50];
     swprintf(wstr, sizeof(wstr) / sizeof(wchar_t), L"동접자 수: %d \t 핑: %ldms", concurrent_users, ping);
     center_text(10, COLS, wstr);
 
     // 매칭 상태 출력
-    wchar_t* matching_status = L"";
-    if (is_matched == 1) {
-        matching_status = L"매칭 완료, 잠시 후 게임이 시작됩니다.\n";
-    }
-    else {
-        if (is_matching == 1) { 
-            matching_status = L"매칭 중... (Enter를 눌러 취소)\n";   
-        }
-        else {
-            matching_status = L"매칭 시작 (Enter를 눌러 시작)\n";
-        }
-    }
-    
-
+    const wchar_t* matching_status = is_matching ? L"매칭 중... (Enter를 눌러 취소)" : L"매칭 시작 (Enter를 눌러 시작)";
     center_text(12, COLS, matching_status);
 }
 

@@ -10,7 +10,7 @@
 
 #define PORTNUM 12312
 #define MAX_PLAYER 1000
-#define MATCHING_NUM 2 
+#define MATCHING_NUM 1
 #define BULLET_NUM 2
 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
@@ -315,12 +315,12 @@ void *threadfunc(void *vargp) {
 			while(line != NULL) {
 				if (sscanf(buf, "LOCAL_BULLET_INFO,x=%d,y=%d,dx=%d,dy=%d,is_active=%d",
 					&bullet_x, &bullet_y, &bullet_dx, &bullet_dy, &bullet_is_active) == 5) {
+
 					np->bullets[cur_client_num].bullet_info[bullet_index].x = bullet_x;
 					np->bullets[cur_client_num].bullet_info[bullet_index].y = bullet_y;
 					np->bullets[cur_client_num].bullet_info[bullet_index].dx = bullet_dx;
 					np->bullets[cur_client_num].bullet_info[bullet_index].dy = bullet_dy;
                     			np->bullets[cur_client_num].bullet_info[bullet_index].is_active = bullet_is_active;
-
 					bullet_index++;
 				}
 				line = strtok(NULL, "\n");
@@ -365,6 +365,7 @@ void *threadfunc(void *vargp) {
 		ready_client[ready_index] = -1;
 		ready_client_num -= 1;
 		printf("매칭 취소 현재 대기 중인 클라이언트의 수 %d\n", ready_client_num);
+		is_matching = 0;
 	}
 
 	// 클라이언트가 동접자 수에 포함됐었다면 동접자 수를 줄이고, 그렇지 않다면 동접자 수를 그대로 유지한다
