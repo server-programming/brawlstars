@@ -28,14 +28,17 @@ void draw_game_screen(Player* players, int selected_skin, int sd) {
     draw_player_hp(&players[0]);
     draw_players(players, MAX_PLAYERS, selected_skin, sd);
     draw_bullets(sd, players);
-
 }
+
 void process_game_input(int sd, Player* player) {
     static clock_t last_key_time = 0;  // 마지막 총알 발사 시간 추적
     clock_t current_time = clock();  // 현재 시간
 
     char ch = getch();
     move_player(player, ch);
+    if (ch == 't') {
+	    player->hp -= 1;
+    }
 
     // 총알 발사 간격 확인
     if ((current_time - last_key_time) * 1000 / CLOCKS_PER_SEC >= KEY_INTERVAL) {
@@ -44,6 +47,17 @@ void process_game_input(int sd, Player* player) {
     }
 }
 
+int send_player_dead(int sd) {
+	char buf[1024] = "";
+	int buf_pos = 0;
+
+	buf = snprintf(buf, sizeof(buf), "PLAYER_IS_DEAD");
+	if (send(sd, buf, strlen(buf), 0) == -1) {
+		perror("send bullets to server");
+		return 1;
+	}
+	return 0;
+}
 
 // 게임 초기화 및 루프
 void init_game(int sd, int client_num, int selected_skin) {
@@ -58,8 +72,10 @@ void init_game(int sd, int client_num, int selected_skin) {
 
         process_game_input(sd, player);       
         draw_game_screen(players, selected_skin, sd);
-        if (player->is_dead){
-            draw_game_over_screen(); //게임 오버 스크린 띄움
+        if (player->hp <= 0){
+	    send_player_dead(sd); // 플레이어 죽음 철;?
+            draw_game_over_screen(); // 게임 오버 스크린 띄움
+	    napms(30);
             break;
         }
         
@@ -69,6 +85,9 @@ void init_game(int sd, int client_num, int selected_skin) {
     }
 
     // lobby(sd, client_num); // 게임 루프 종료 시 로비 화면으로 돌아감
+    clear();
+    refresh();
+    napms(1000);
 }
 
 

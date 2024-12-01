@@ -128,6 +128,7 @@ void lobby(int sd, int client_num) {
 
                 if (is_matched == 1) {                     
                     init_game(sd, client_num, selected_skin); // 게임 시작
+		    is_matching = 0;
                     break;
                 }
             }
@@ -174,4 +175,3 @@ void print_selected_skin(int selected_skin) {
         mvprintw(LINES - 3, COLS / 2 - 10, "%ls", player_shapes->shapes[selected_skin]);
     }
 }
-
