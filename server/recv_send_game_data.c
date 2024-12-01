@@ -6,7 +6,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define MATCHING_NUM 1
+#define MATCHING_NUM 2
 
 typedef struct player {
         int x;

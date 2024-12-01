@@ -162,11 +162,13 @@ void update_bullets(Player players[]) {
         // 로컬 총알 충돌 체크
         if (is_bullet_collision(b->x, b->y)) {
             b->is_active = 0;  // 충돌 시 총알 비활성화
+	        local_bullet_count--;
         }
 
         for (int j = 0; j < 4; j++) {
             if (is_player_hit(b->x, b->y, &players[j])) {
                 b->is_active = 0;  // 플레이어와 충돌 시 총알 비활성화
+		        local_bullet_count--;
             }
         }
     }
@@ -181,11 +183,13 @@ void update_bullets(Player players[]) {
         // 원격 총알 충돌 체크
         if (is_bullet_collision(b->x, b->y)) {
             b->is_active = 0;  // 충돌 시 원격 총알 비활성화
+	        remote_bullet_count--;
         }
 
         for (int j = 0; j < 4; j++) {
             if (is_player_hit(b->x, b->y, &players[j])) {
                 b->is_active = 0;  // 플레이어와 충돌 시 원격 총알 비활성화
+		        remote_bullet_count--;
             }
         }
     }

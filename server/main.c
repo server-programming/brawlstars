@@ -10,7 +10,7 @@
 
 #define PORTNUM 12312
 #define MAX_PLAYER 1000
-#define MATCHING_NUM 1
+#define MATCHING_NUM 2
 #define BULLET_NUM 2
 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
@@ -315,6 +315,7 @@ void *threadfunc(void *vargp) {
 			while(line != NULL) {
 				if (sscanf(buf, "LOCAL_BULLET_INFO,x=%d,y=%d,dx=%d,dy=%d,is_active=%d",
 					&bullet_x, &bullet_y, &bullet_dx, &bullet_dy, &bullet_is_active) == 5) {
+<<<<<<< HEAD
 					
 					if (bullet_is_active) {
 						np->bullets[cur_client_num].bullet_info[bullet_index].x = bullet_x;
@@ -329,6 +330,14 @@ void *threadfunc(void *vargp) {
 						np->bullets[cur_client_num].bullet_info[bullet_index].dy = 0;
                     				np->bullets[cur_client_num].bullet_info[bullet_index].is_active = bullet_is_active;
 					}
+=======
+
+					np->bullets[cur_client_num].bullet_info[bullet_index].x = bullet_x;
+					np->bullets[cur_client_num].bullet_info[bullet_index].y = bullet_y;
+					np->bullets[cur_client_num].bullet_info[bullet_index].dx = bullet_dx;
+					np->bullets[cur_client_num].bullet_info[bullet_index].dy = bullet_dy;
+                    			np->bullets[cur_client_num].bullet_info[bullet_index].is_active = bullet_is_active;
+>>>>>>> 43ac2fd (총알 한발씩 나갈 수 있도록 수정 완료)
 					bullet_index++;
 				}
 				line = strtok(NULL, "\n");
