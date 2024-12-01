@@ -49,14 +49,8 @@ void process_game_input(int sd, Player* player) {
 
 int send_player_dead(int sd) {
 	char buf[1024] = "";
-<<<<<<< HEAD
-	int buf_pos = 0;
-
-	buf = snprintf(buf, sizeof(buf), "PLAYER_IS_DEAD");
-=======
 
 	snprintf(buf, sizeof(buf), "PLAYER_IS_DEAD");
->>>>>>> 43ac2fd (총알 한발씩 나갈 수 있도록 수정 완료)
 	if (send(sd, buf, strlen(buf), 0) == -1) {
 		perror("send bullets to server");
 		return 1;

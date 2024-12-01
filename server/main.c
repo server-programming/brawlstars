@@ -315,7 +315,6 @@ void *threadfunc(void *vargp) {
 			while(line != NULL) {
 				if (sscanf(buf, "LOCAL_BULLET_INFO,x=%d,y=%d,dx=%d,dy=%d,is_active=%d",
 					&bullet_x, &bullet_y, &bullet_dx, &bullet_dy, &bullet_is_active) == 5) {
-<<<<<<< HEAD
 					
 					if (bullet_is_active) {
 						np->bullets[cur_client_num].bullet_info[bullet_index].x = bullet_x;
@@ -330,14 +329,7 @@ void *threadfunc(void *vargp) {
 						np->bullets[cur_client_num].bullet_info[bullet_index].dy = 0;
                     				np->bullets[cur_client_num].bullet_info[bullet_index].is_active = bullet_is_active;
 					}
-=======
 
-					np->bullets[cur_client_num].bullet_info[bullet_index].x = bullet_x;
-					np->bullets[cur_client_num].bullet_info[bullet_index].y = bullet_y;
-					np->bullets[cur_client_num].bullet_info[bullet_index].dx = bullet_dx;
-					np->bullets[cur_client_num].bullet_info[bullet_index].dy = bullet_dy;
-                    			np->bullets[cur_client_num].bullet_info[bullet_index].is_active = bullet_is_active;
->>>>>>> 43ac2fd (총알 한발씩 나갈 수 있도록 수정 완료)
 					bullet_index++;
 				}
 				line = strtok(NULL, "\n");
@@ -373,6 +365,45 @@ void *threadfunc(void *vargp) {
 			if (connect_to_client(np->ns[cur_client_num], cur_client_num, bullet_location, 2) == 0) {
 				break;
 			}
+		}
+
+
+		// 클라이언트가 사망했을 경우
+		if (strstr(buf, "PLAYER_IS_DEAD") != NULL) {
+
+			// 게임 방에서 해당 클라이언트의 정보를 찾는다
+			for(int i=0; i<MATCHING_NUM; i++) {
+				if (room[np->room_index[cur_client_num]].client_id[i] == cur_client_num) {
+					
+					// 게임 방에서 해당 플레이어를 제거한다
+					room[np->room_index[cur_client_num]].client_id[i] = -1;
+					
+					// 게임 방에서 플레이 중인 유저 수도 감소시킨다
+					room[np->room_index[cur_client_num]].player_num -= 1;
+
+					// 플레이어 정보도 초기화한다
+					np->players[cur_client_num].x = -1;
+					np->players[cur_client_num].y = -1;
+					np->players[cur_client_num].skin = 0;
+					np->players[cur_client_num].hp = 0;
+					np->players[cur_client_num].is_dead = 0;
+
+					for(int j=0; j<BULLET_NUM; j++) {
+						np->bullets[cur_client_num].bullet_info[j].x = -1;
+						np->bullets[cur_client_num].bullet_info[j].y = -1;
+						np->bullets[cur_client_num].bullet_info[j].dx = 0;
+						np->bullets[cur_client_num].bullet_info[j].dy = 0;
+						np->bullets[cur_client_num].bullet_info[j].is_active = 0;
+					}
+				}
+			}
+
+			if (room[np->room_index[cur_client_num]].player_num == 0) {
+				printf("클라이언트 %d가 %d방에서 마지막으로 사망함\n", cur_client_num, np->room_index[cur_client_num]);
+			}
+
+			// 해당 플레이어에게 배정된 게임 방 번호도 초기화
+			np->room_index[cur_client_num] = -1;
 		}
 	}
 
