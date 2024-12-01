@@ -11,6 +11,7 @@
 #define PORTNUM 12312
 #define MAX_PLAYER 1000
 #define MATCHING_NUM 2 
+#define BULLET_NUM 2
 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
@@ -59,6 +60,7 @@ typedef struct {
 	// 게임에 참여하는 10명의 정보를 담을 구조체 배열
 	int client_id[MATCHING_NUM];
 	int is_empty;
+	int player_num;
 } room_info;
 
 // 모든 클라이언트들의 정보를 담은 배열에 접근할 수 있는 포인터 선언
@@ -102,6 +104,7 @@ void *manage_room(void *vargp) {
 			room[i].client_id[j] = -1;
 		}
 		room[i].is_empty = 1;
+		room[i].player_num = 0;
 	}
 
 	printf("모든 게임 방 공간 할당 완료, 방 개수 %d\n", room_num);
@@ -118,8 +121,10 @@ void *manage_room(void *vargp) {
 
 				// 빈 방이 있다면 
 				if (room[i].is_empty) {
+
 					find_room = 1;
 					room[i].is_empty = 0;
+					room[i].player_num = MATCHING_NUM;
 
 					// 해당 방에 대기 중이었던 유저들의 정보를 저장한다
 					// ready_client에 인덱스로 접근하면 현재 대기 중인 클라이언트의 고유 번호를 확인할 수 있다
@@ -302,7 +307,7 @@ void *threadfunc(void *vargp) {
 		// 클라이언트가 총알 정보를 보내는 경우
 		if (strstr(buf, "LOCAL_BULLET_INFO") != NULL) {
                 // 총알 정보를 초기화 (클라이언트 번호에 해당하는 총알 정보 초기화)
-            	memset(np->bullets[cur_client_num].bullet_info, 0, sizeof(np->bullets[cur_client_num].bullet_info));
+            	//memset(np->bullets[cur_client_num].bullet_info, 0, sizeof(np->bullets[cur_client_num].bullet_info));
             
 			// 클라이언트로부터 총알 정보들을 받아서 갱신한다
 			int bullet_index = 0;
@@ -328,7 +333,7 @@ void *threadfunc(void *vargp) {
 				if (np->ns[room[np->room_index[cur_client_num]].client_id[i]] > 0) {
 					// 해당 클라이언트의 총알 정보를 읽어서 하나의 배열에 저장한다
 					// 너무 변수 인덱스들이 많아져서 수정 좀 해야할듯
-					for (int j=0; j<10; j++) {
+					for (int j=0; j<BULLET_NUM; j++) {
 						memset(buf, '\0', sizeof(buf));
 						sprintf(buf, "%d,x=%d,y=%d,dx=%d,dy=%d,is_active=%d\n", 
 							room[np->room_index[cur_client_num]].client_id[i], 
@@ -362,6 +367,37 @@ void *threadfunc(void *vargp) {
 		printf("매칭 취소 현재 대기 중인 클라이언트의 수 %d\n", ready_client_num);
 	}
 
+	// 클라이언트가 동접자 수에 포함됐었다면 동접자 수를 줄이고, 그렇지 않다면 동접자 수를 그대로 유지한다
+	if (access_to_lobby != 1) {
+		cur_player -= 1;
+	}
+
+	// 클라이언트가 게임 중에 접속을 끊었다면 해당 게임 방의 플레이어 정보를 초기화한다
+	for(int i=0; i<MATCHING_NUM; i++) {
+
+		// 클라이언트가 플레이하던 게임 방에서 자신의 정보를 찾을 경우
+		if (room[np->room_index[cur_client_num]].client_id[i] == cur_client_num) {
+			room[np->room_index[cur_client_num]].client_id[i] = -1;
+			room[np->room_index[cur_client_num]].player_num -= 1;
+		}
+
+		for(int j=0; j<BULLET_NUM; j++) {
+			np->bullets[cur_client_num].bullet_info[j].x = -1;
+			np->bullets[cur_client_num].bullet_info[j].y = -1;
+			np->bullets[cur_client_num].bullet_info[j].dx = 0;
+			np->bullets[cur_client_num].bullet_info[j].dy = 0;
+			np->bullets[cur_client_num].bullet_info[j].is_active = 0;
+		}
+	}
+
+	// 클라이언트가 마지막으로 방에서 나간다면 방 정보를 초기화한다
+	if (room[np->room_index[cur_client_num]].player_num == 0) {
+		printf("클라이언트 %d가 %d번 방에서 마지막으로 나감\n", cur_client_num, np->room_index[cur_client_num]);
+
+		room[np->room_index[cur_client_num]].is_empty = 1;
+
+	}
+
 
 	// 클라이언트가 오프라인 상태이므로 해당 클라이언트가 쓰던 정보들을 초기화 
 	printf("클라이언트 %d가 접속을 종료함\n", cur_client_num);
@@ -369,11 +405,6 @@ void *threadfunc(void *vargp) {
 	np->ns[cur_client_num] = 0;
 	np->players[cur_client_num].x = -10;
 	np->players[cur_client_num].y = -10;
-
-	// 클라이언트가 동접자 수에 포함됐었다면 동접자 수를 줄이고, 그렇지 않다면 동접자 수를 그대로 유지한다
-	if (access_to_lobby != 1) {
-		cur_player -= 1;
-	}
 
 	return NULL;
 }
@@ -406,9 +437,9 @@ int main() {
 	// 클라이언트들의 총알 정보를 저장할 배열 준비
 	for(int i=0; i<MAX_PLAYER; i++) {
 		bullet *bullet_info;
-		bullet_info = (bullet *)malloc(sizeof(bullet) * 10);
+		bullet_info = (bullet *)malloc(sizeof(bullet) * BULLET_NUM);
 
-		for(int j=0; j<10; j++) {
+		for(int j=0; j<BULLET_NUM; j++) {
 			bullet_info[j].x = -1;
 			bullet_info[j].y = -1;
 			bullet_info[j].dx = -1;

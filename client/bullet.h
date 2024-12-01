@@ -4,7 +4,7 @@
 #include "player.h"
 
 // 한 번에 발생할 수 있는 총알 개수
-#define MAX_LOCAL_BULLETS 10
+#define MAX_LOCAL_BULLETS 1
 #define MAX_REMOTE_BULLETS 1000
 
 // 총알 구조체 정의
