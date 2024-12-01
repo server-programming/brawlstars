@@ -65,20 +65,20 @@ int recv_other_players_info(int sd, Player players[]) {
     if (recv(sd, buf, sizeof(buf), 0) == -1) {
         perror("recv from server");
         return 1;
-    }
+    } 
 
     // 서버로부터 받은 정보로 다른 플레이어 그리기
     char* line = strtok(buf, "\n");  // line 변수는 여기에 선언되어야 함
 
     int index = 1;
     while (line != NULL) {
-        int id, x1, y1, skin_index, hp, is_dead;
-        if (sscanf(line, "x=%d,y=%d,skin=%d,hp=%d,is_dead=%d", &x1, &y1, &skin_index, &hp, &is_dead) == 5) {
-            update_player_info(&players[0], x1, y1, players[0].dir, skin_index, hp, is_dead, -1, 1);
+        int id, x1, y1, skin_index, hp, is_dead, enemy;
+        if (sscanf(line, "x=%d,y=%d,skin=%d,hp=%d,is_dead=%d,enemy=%d", &x1, &y1, &skin_index, &hp, &is_dead, &enemy) == 6) {
+            update_player_info(&players[0], x1, y1, players[0].dir, skin_index, hp, is_dead, -1, 1, enemy);
         }
-        else if (sscanf(line, "%d,x=%d,y=%d,skin=%d,hp=%d,is_dead=%d", &id, &x1, &y1, &skin_index, &hp, &is_dead) == 6) {
+        else if (sscanf(line, "%d,x=%d,y=%d,skin=%d,hp=%d,is_dead=%d,enemy=%d", &id, &x1, &y1, &skin_index, &hp, &is_dead, &enemy) == 7) {
             Player* other_player = &players[index]; // 해당 플레이어의  정보 업데이트
-            update_player_info(other_player, x1, y1, other_player->dir, skin_index, hp, is_dead, -1, 0);
+            update_player_info(other_player, x1, y1, other_player->dir, skin_index, hp, is_dead, -1, 0, enemy);
             index += 1;
         }
         line = strtok(NULL, "\n");  // strtok 호출을 반복
@@ -86,7 +86,7 @@ int recv_other_players_info(int sd, Player players[]) {
     return 0;
 }
 
-void update_player_info(Player* player, int x, int y, int dir, int skin_index, int hp, int is_dead, int rank, int is_local) {
+void update_player_info(Player* player, int x, int y, int dir, int skin_index, int hp, int is_dead, int rank, int is_local, int enemy) {
     // 플레이어의 모양(스킨)을 가져옴
     PlayerShape* player_shape = get_player_shape();
 
@@ -98,6 +98,7 @@ void update_player_info(Player* player, int x, int y, int dir, int skin_index, i
     player->is_dead = is_dead; // 플레이어 사망 여부
     player->rank = rank; // 플레이어 순위
     player->is_local = is_local; // 플레이어 로컬 여부
+	player->enemy = enemy;
 }
 
 // 색상 구분된 플레이어 그리기 함수

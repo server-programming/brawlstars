@@ -10,7 +10,7 @@
 
 #define PORTNUM 12312
 #define MAX_PLAYER 1000
-#define MATCHING_NUM 2
+#define MATCHING_NUM 4
 #define BULLET_NUM 2
 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
@@ -299,6 +299,7 @@ void *threadfunc(void *vargp) {
 
 		// 클라이언트가 게임에 접속하는 경우
 		if (strstr(buf, "ACCESS_TO_GAME") != NULL) {
+
 			if (recv_send_game_data(np, buf, cur_client_num, &room[np->room_index[cur_client_num]], MATCHING_NUM) == 0) {
 				break;
 			}
@@ -388,6 +389,7 @@ void *threadfunc(void *vargp) {
 					np->players[cur_client_num].hp = 0;
 					np->players[cur_client_num].is_dead = 0;
 
+					// 해당 플레이어가 발사한 총알 정보도 초기화한다 
 					for(int j=0; j<BULLET_NUM; j++) {
 						np->bullets[cur_client_num].bullet_info[j].x = -1;
 						np->bullets[cur_client_num].bullet_info[j].y = -1;
