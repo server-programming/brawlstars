@@ -10,7 +10,7 @@
 
 #define PORTNUM 12312
 #define MAX_PLAYER 1000
-#define MATCHING_NUM 1 
+#define MATCHING_NUM 2 
 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
@@ -57,7 +57,7 @@ typedef struct {
 // 게임 방 구조체
 typedef struct {
 	// 게임에 참여하는 10명의 정보를 담을 구조체 배열
-	network_player *np_room;
+	int client_id[MATCHING_NUM];
 	int is_empty;
 } room_info;
 
@@ -82,7 +82,7 @@ int connect_to_client(int ns, int cur_client_num, char *buf, int flag);
 int cur_player = 0;
 
 // 게임에 접속하면 클라이언트와 서버의 데이터 전송을 이 함수가 관여함 recv_send_game_data.c
-int recv_send_game_data(network_player *np, char *buf, int cur_client_num);
+int recv_send_game_data(network_player *np, char *buf, int cur_client_num, room_info *room, int player_in_room);
 
 
 // 게임 방 정보를 관리할 쓰레드 함수
@@ -97,23 +97,10 @@ void *manage_room(void *vargp) {
 
 	// 모든 게임 방에 10명의 플레이어 정보를 받을 수 있도록 공간 할당
 	for(int i=0; i<room_num; i++) {
-
-		int *ns;
-		network_player *np_room_new;
-		player *p;
-		int *room_index;
-
-		ns = (int *)malloc(sizeof(int) * MATCHING_NUM);
-		p = (player *)malloc(sizeof(player) * MATCHING_NUM);
-		room_index = (int *)malloc(sizeof(int) * MATCHING_NUM);
-
-		np_room_new = (network_player *)malloc(sizeof(network_player));
-
-		np_room_new->ns = ns;
-		np_room_new->players = p;
-		np_room_new->room_index = room_index;
-
-		room[i].np_room = np_room_new;
+		
+		for(int j=0; j<MATCHING_NUM; j++) {
+			room[i].client_id[j] = -1;
+		}
 		room[i].is_empty = 1;
 	}
 
@@ -137,9 +124,8 @@ void *manage_room(void *vargp) {
 					// 해당 방에 대기 중이었던 유저들의 정보를 저장한다
 					// ready_client에 인덱스로 접근하면 현재 대기 중인 클라이언트의 고유 번호를 확인할 수 있다
 					for (int j = 0; j < MATCHING_NUM; j++) {
-						room[i].np_room->ns[j] = np->ns[ready_client[j]];
-						room[i].np_room->players[j] = np->players[ready_client[j]];
-						room[i].np_room->room_index[j] = i;
+
+						room[i].client_id[j] = ready_client[j];
 						np->room_index[ready_client[j]] = i;
 					}
 
@@ -150,7 +136,7 @@ void *manage_room(void *vargp) {
 
 					// 매칭된 유저들의 정보 확인
 					for(int j=0; j<MATCHING_NUM; j++) {
-						printf("%d번 방에 들어간 클라이언트:%d\n", i, room[i].np_room->ns[j]);
+						printf("%d번 방에 들어간 클라이언트:%d\n", i, room[i].client_id[j]);
 					}
 					break;
 				}
@@ -187,7 +173,7 @@ void *threadfunc(void *vargp) {
 	int bullet_y;
 	int bullet_dx;
 	int bullet_dy;
-    int bullet_is_active;
+    	int bullet_is_active;
 
 	// 클라이언트가 로비에 처음 접속하는지 확인하기 위한 변수
 	int access_to_lobby = 1;
@@ -208,7 +194,7 @@ void *threadfunc(void *vargp) {
 			break;
 		}
 
-		printf("%s\n", buf);
+		printf("클라이언트 %d의 메시지: %s\n", cur_client_num, buf);
 
 		// 클라이언트가 서버와 연결될 경우 고유번호를 전송한다
 		if (strstr(buf, "GET_CLIENT_UNIQUE_NUM") != NULL) {
@@ -216,7 +202,7 @@ void *threadfunc(void *vargp) {
 			if (connect_to_client(np->ns[cur_client_num], cur_client_num, buf, 1) == 0) {
 				break;
 			}
-			printf("Client %d start game\n", cur_client_num);
+			printf("클라이언트  %d이(가) 접속함\n", cur_client_num);
 		}
 
 		// 클라이언트가 로비에 접속하는 경우 동접자 수를 늘린다
@@ -252,7 +238,7 @@ void *threadfunc(void *vargp) {
 			for(int i=0; i<MATCHING_NUM; i++) {
 				if (ready_client[i] == -1) {
 					
-					printf("대기열 %d번 위치에 클라이언트 정보 저장\n", i);
+					printf("대기열 %d번 위치에 클라이언트 %d의 정보 저장\n", i, cur_client_num);
 					// 대기열에 클라이언트 고유 번호 저장
 					ready_client[i] = cur_client_num;
 					ready_client_num += 1;
@@ -267,17 +253,12 @@ void *threadfunc(void *vargp) {
 			sprintf(buf, "WAIT_FOR_MATCH");
 			while(1) {
 
-
-				// 클라이언트가 대기 중에 오프라인이 되었을 경우에 대해서도 코드 필요함
-				//
-
 				if (ready_client_num == MATCHING_NUM) {
 					break;
 				}
 
 				// 서버는 클라이언트에게 WAIT_FOR_MATCHING 메시지를 보내 클라이언트가 기다리게 한다
 				// 클라이언트는 서버로부터 계속 WAIT_FOR_MATCH 메시지를 받으면서 대기한다
-
 				if (connect_to_client(np->ns[cur_client_num], cur_client_num, buf, 1) == 0) {
 					// 클라이언트가 도중에 연결이 끊길 수 있으므로
 					status = 0;
@@ -302,6 +283,7 @@ void *threadfunc(void *vargp) {
 				}
 
 			} else {
+				// 클라이언트가 매칭 중에 연결을 취소한 경우
 				ready_client[ready_index] = -1;
 				ready_client_num -= 1;
 				printf("매칭 취소 현재 대기 중인 클라이언트의 수 %d\n", ready_client_num);
@@ -312,7 +294,7 @@ void *threadfunc(void *vargp) {
 
 		// 클라이언트가 게임에 접속하는 경우
 		if (strstr(buf, "ACCESS_TO_GAME") != NULL) {
-			if (recv_send_game_data(np, buf, cur_client_num) == 0) {
+			if (recv_send_game_data(np, buf, cur_client_num, &room[np->room_index[cur_client_num]], MATCHING_NUM) == 0) {
 				break;
 			}
 		}
@@ -320,7 +302,7 @@ void *threadfunc(void *vargp) {
 		// 클라이언트가 총알 정보를 보내는 경우
 		if (strstr(buf, "LOCAL_BULLET_INFO") != NULL) {
                 // 총알 정보를 초기화 (클라이언트 번호에 해당하는 총알 정보 초기화)
-            memset(np->bullets[cur_client_num].bullet_info, 0, sizeof(np->bullets[cur_client_num].bullet_info));
+            	memset(np->bullets[cur_client_num].bullet_info, 0, sizeof(np->bullets[cur_client_num].bullet_info));
             
 			// 클라이언트로부터 총알 정보들을 받아서 갱신한다
 			int bullet_index = 0;
@@ -332,7 +314,7 @@ void *threadfunc(void *vargp) {
 					np->bullets[cur_client_num].bullet_info[bullet_index].y = bullet_y;
 					np->bullets[cur_client_num].bullet_info[bullet_index].dx = bullet_dx;
 					np->bullets[cur_client_num].bullet_info[bullet_index].dy = bullet_dy;
-                    np->bullets[cur_client_num].bullet_info[bullet_index].is_active = bullet_is_active;
+                    			np->bullets[cur_client_num].bullet_info[bullet_index].is_active = bullet_is_active;
 
 					bullet_index++;
 				}
@@ -343,17 +325,19 @@ void *threadfunc(void *vargp) {
 			for(int i=0; i<MATCHING_NUM; i++) {
 	
 				// 네트워크가 연결되어있다면
-				if (np->ns[i] > 0) {
+				if (np->ns[room[np->room_index[cur_client_num]].client_id[i]] > 0) {
 					// 해당 클라이언트의 총알 정보를 읽어서 하나의 배열에 저장한다
+					// 너무 변수 인덱스들이 많아져서 수정 좀 해야할듯
 					for (int j=0; j<10; j++) {
 						memset(buf, '\0', sizeof(buf));
 						sprintf(buf, "%d,x=%d,y=%d,dx=%d,dy=%d,is_active=%d\n", 
-							i, 
-							np->bullets[i].bullet_info[j].x,
-							np->bullets[i].bullet_info[j].y,
-							np->bullets[i].bullet_info[j].dx,
-							np->bullets[i].bullet_info[j].dy,
-                            np->bullets[i].bullet_info[j].is_active);
+							room[np->room_index[cur_client_num]].client_id[i], 
+							np->bullets[room[np->room_index[cur_client_num]].client_id[i]].bullet_info[j].x,
+							np->bullets[room[np->room_index[cur_client_num]].client_id[i]].bullet_info[j].y,
+							np->bullets[room[np->room_index[cur_client_num]].client_id[i]].bullet_info[j].dx,
+							np->bullets[room[np->room_index[cur_client_num]].client_id[i]].bullet_info[j].dy,
+							np->bullets[room[np->room_index[cur_client_num]].client_id[i]].bullet_info[j].is_active
+						);
 
 						strncat(bullet_location, buf, strlen(buf));
 					}
@@ -367,8 +351,6 @@ void *threadfunc(void *vargp) {
 			if (connect_to_client(np->ns[cur_client_num], cur_client_num, bullet_location, 2) == 0) {
 				break;
 			}
-
-			printf("총알 정보 수신 중\n");
 		}
 	}
 
@@ -382,7 +364,7 @@ void *threadfunc(void *vargp) {
 
 
 	// 클라이언트가 오프라인 상태이므로 해당 클라이언트가 쓰던 정보들을 초기화 
-	printf("client %d is offline\n", cur_client_num);
+	printf("클라이언트 %d가 접속을 종료함\n", cur_client_num);
 	close(np->ns[cur_client_num]);
 	np->ns[cur_client_num] = 0;
 	np->players[cur_client_num].x = -10;
@@ -397,7 +379,6 @@ void *threadfunc(void *vargp) {
 }
 
 int main() {
-	char buf[256];
 	struct sockaddr_in cli;
 	int sd;
 	int *ns;
@@ -430,8 +411,8 @@ int main() {
 		for(int j=0; j<10; j++) {
 			bullet_info[j].x = -1;
 			bullet_info[j].y = -1;
-			bullet_info[j].dx = 0;
-			bullet_info[j].dy = 0;
+			bullet_info[j].dx = -1;
+			bullet_info[j].dy = -1;
 		}
 
 		bullets[i].bullet_info = bullet_info;

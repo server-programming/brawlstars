@@ -18,7 +18,7 @@
 #include "game.h"
 
 #define MAX_PLAYERS 4
-#define KEY_INTERVAL 10 
+#define KEY_INTERVAL 1 
 // 색상 정의
 #define BLUE_COLOR "\x1b[34m"
 #define RESET_COLOR "\x1b[0m"
