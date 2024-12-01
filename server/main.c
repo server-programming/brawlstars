@@ -315,12 +315,20 @@ void *threadfunc(void *vargp) {
 			while(line != NULL) {
 				if (sscanf(buf, "LOCAL_BULLET_INFO,x=%d,y=%d,dx=%d,dy=%d,is_active=%d",
 					&bullet_x, &bullet_y, &bullet_dx, &bullet_dy, &bullet_is_active) == 5) {
-
-					np->bullets[cur_client_num].bullet_info[bullet_index].x = bullet_x;
-					np->bullets[cur_client_num].bullet_info[bullet_index].y = bullet_y;
-					np->bullets[cur_client_num].bullet_info[bullet_index].dx = bullet_dx;
-					np->bullets[cur_client_num].bullet_info[bullet_index].dy = bullet_dy;
-                    			np->bullets[cur_client_num].bullet_info[bullet_index].is_active = bullet_is_active;
+					
+					if (bullet_is_active) {
+						np->bullets[cur_client_num].bullet_info[bullet_index].x = bullet_x;
+						np->bullets[cur_client_num].bullet_info[bullet_index].y = bullet_y;
+						np->bullets[cur_client_num].bullet_info[bullet_index].dx = bullet_dx;
+						np->bullets[cur_client_num].bullet_info[bullet_index].dy = bullet_dy;
+                    				np->bullets[cur_client_num].bullet_info[bullet_index].is_active = bullet_is_active;
+					} else {
+						np->bullets[cur_client_num].bullet_info[bullet_index].x = -1;
+						np->bullets[cur_client_num].bullet_info[bullet_index].y = -1;
+						np->bullets[cur_client_num].bullet_info[bullet_index].dx = 0;
+						np->bullets[cur_client_num].bullet_info[bullet_index].dy = 0;
+                    				np->bullets[cur_client_num].bullet_info[bullet_index].is_active = bullet_is_active;
+					}
 					bullet_index++;
 				}
 				line = strtok(NULL, "\n");
