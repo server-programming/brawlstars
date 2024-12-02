@@ -83,7 +83,7 @@ int recv_send_game_data(network_player *np, char *buf, int cur_client_num, room_
 		strncat(player_pos, buf1, strlen(buf1));
 	}
 
-	printf("player pos\n%s\n", player_pos);
+	//printf("player pos\n%s\n", player_pos);
 
 	if (connect_to_client(np->ns[cur_client_num], cur_client_num, player_pos, 2) == 0) {
 		return 0;

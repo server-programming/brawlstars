@@ -115,12 +115,6 @@ void lobby(int sd, int client_num) {
 		recv(sd, buf, sizeof(buf), 0);
 
 
-		// 서버로부터 매칭 중이므로 대기하라는 메시지를 받게 될 경우
-		if (strstr(buf, "WAIT_FOR_MATCH") != NULL) {
-			is_matched = 0;
-		}
-
-
 		// 서버로부터 매칭이 되었으므로 게임으로 넘어가라는 메시지를 받게 될 경우  
 		if (strstr(buf, "GAME_MATCHED") != NULL) {
 			is_matched = 1;

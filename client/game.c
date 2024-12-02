@@ -98,9 +98,10 @@ void init_game(int sd, int client_num, int selected_skin) {
             break;
         }
 
+	// 플레이어가 우승을 한 경우에도 시스템은 사망한 것으로 처리
 	if (player->enemy == 1) {
 		send_player_dead(sd);
-		draw_game_win_screen();
+		draw_winner_screen();
 		napms(30);
 		break;
 	}
@@ -116,41 +117,6 @@ void init_game(int sd, int client_num, int selected_skin) {
     napms(1000);
 }
 
-void draw_game_win_screen() {
-    clear();  // 사망 시 화면을 완전히 지움
-    
-    const char *game_over_art[] = {
-        "                                                   ",
-        "                                                   ",
-        "#           #   #   ##         #   ##              ",
-        "#           #   #   # #        #   ##              ",
-        "#           #   #   #  #       #   ##              ",
-        "#           #   #   #   ##     #   ##              ",
-        "#     #     #   #   #     #    #   ##              ",
-        "#     #     #   #   #      #   #   ##              ",
-        "#     #     #   #   #       #  #   ##              ",
-        " #   ###   #    #   #        # #                   ",
-        "  ###   ###     #   #        ##    ##              ",
-        "",
-        "Press 'r' to return to lobby",
-        NULL
-    };
-    
-    //여기쯤 게임 오버 화면에 플레이어 순위를 띄우면 좋을 것 같아요. -> 추후 구현
-
-    int start_y = (LINES - 13) / 2;
-    for (int i = 0; game_over_art[i] != NULL; i++) {
-        mvprintw(start_y + i, (COLS - strlen(game_over_art[i])) / 2, "%s", game_over_art[i]);
-    }
-
-    refresh();  // 화면 갱신
-
-    // 'r' 키 입력을 기다림
-    int ch;
-    while ((ch = getch()) != 'r') {
-        // 'r' 키가 아닌 다른 키 입력은 무시
-    }
-}
 
 
 void draw_game_over_screen() {
@@ -191,12 +157,12 @@ void draw_winner_screen() {
 	clear(); // 우승 시 화면을 완전히 지움
 		
 	const char *winner_art[] = {
-	    "##   ##   ######  ##   ##  ##   ##  #######  ######",
+	    "##   ##   ######  ##   ##  ##   ##  #######  ###### ",
     	    "##   ##     ##    ###  ##  ###  ##   ##      ##   ##",
             "##   ##     ##    #### ##  #### ##   ##      ##   ##",
-            "## # ##     ##    ## ####  ## ####   ####    ######",
-            "#######     ##    ##  ###  ##  ###   ##      #####",
-            "### ###     ##    ##   ##  ##   ##   ##      ##  ##",
+            "## # ##     ##    ## ####  ## ####   ####    ###### ",
+            "#######     ##    ##  ###  ##  ###   ##      #####  ",
+            "### ###     ##    ##   ##  ##   ##   ##      ##  ## ",
             "##   ##   ######  ##   ##  ##   ##  #######  ##   ##",
 	    "                                                    ",
 	    "                                                    ",

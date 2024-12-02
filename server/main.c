@@ -132,10 +132,6 @@ void *manage_room(void *vargp) {
 
 						room[i].client_id[j] = ready_client[j];
 						np->room_index[ready_client[j]] = i;
-					}
-
-					ready_client_num = 0;
-					for(int j=0; j<MATCHING_NUM; j++) {
 						ready_client[j] = -1;
 					}
 
@@ -143,6 +139,10 @@ void *manage_room(void *vargp) {
 					for(int j=0; j<MATCHING_NUM; j++) {
 						printf("%d번 방에 들어간 클라이언트:%d\n", i, room[i].client_id[j]);
 					}
+
+					// 대기열 정보를 초기화하기 전에 우선 대기중인 클라이언트들이 무한반복에서 빠져나와야 한다
+					ready_client_num = 0;
+
 					break;
 				}
 			}
@@ -199,7 +199,7 @@ void *threadfunc(void *vargp) {
 			break;
 		}
 
-		printf("클라이언트 %d의 메시지: %s\n", cur_client_num, buf);
+		//printf("클라이언트 %d의 메시지: %s\n", cur_client_num, buf);
 
 		// 클라이언트가 서버와 연결될 경우 고유번호를 전송한다
 		if (strstr(buf, "GET_CLIENT_UNIQUE_NUM") != NULL) {
@@ -262,16 +262,9 @@ void *threadfunc(void *vargp) {
 					break;
 				}
 
-				// 서버는 클라이언트에게 WAIT_FOR_MATCHING 메시지를 보내 클라이언트가 기다리게 한다
-				// 클라이언트는 서버로부터 계속 WAIT_FOR_MATCH 메시지를 받으면서 대기한다
-				if (connect_to_client(np->ns[cur_client_num], cur_client_num, buf, 1) == 0) {
-					// 클라이언트가 도중에 연결이 끊길 수 있으므로
-					status = 0;
-					break;
-				}
 			}
 
-			sleep(2);
+			sleep(1);
 
 			is_matching = 0;
 
@@ -360,7 +353,7 @@ void *threadfunc(void *vargp) {
 				
 			}
 
-			printf("<<bullet>>\n%s\n", bullet_location);
+			//printf("<<bullet>>\n%s\n", bullet_location);
 
 			// 서버와 통신 중인 클라이언트를 제외한 나머지 클라이언트들의 총알 정보를 전송
 			if (connect_to_client(np->ns[cur_client_num], cur_client_num, bullet_location, 2) == 0) {
@@ -400,8 +393,10 @@ void *threadfunc(void *vargp) {
 				}
 			}
 
+			// 해당 게임방이 비었다면
 			if (room[np->room_index[cur_client_num]].player_num == 0) {
 				printf("클라이언트 %d가 %d방에서 마지막으로 사망함\n", cur_client_num, np->room_index[cur_client_num]);
+				room[np->room_index[cur_client_num]].is_empty = 1;
 			}
 
 			// 해당 플레이어에게 배정된 게임 방 번호도 초기화
