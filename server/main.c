@@ -7,6 +7,8 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <pthread.h>
+#include <fcntl.h>
+#include <sys/time.h>
 
 #define PORTNUM 12312
 #define MAX_PLAYER 1000
@@ -173,6 +175,10 @@ void *threadfunc(void *vargp) {
 	int client_is_dead;
 	int cur_client_num = np->cur_client;
 	int ns = np->ns[cur_client_num];
+	int fd;
+	struct timeval t1, t2;
+	float check[1000];
+	int file_index = 0;
 
 	int bullet_x;
 	int bullet_y;
@@ -187,7 +193,13 @@ void *threadfunc(void *vargp) {
 	int is_matching = 0;
 	int ready_index;
 
+	if (cur_client_num == 0) {
+		fd = open("log.txt", O_CREAT | O_WRONLY | O_APPEND, 0644);
+	}
+
 	while(1) {
+
+		gettimeofday(&t1, NULL);
 
 		memset(buf, '\0', sizeof(buf));
 		network_status = recv(ns, buf, sizeof(buf), 0);
@@ -402,6 +414,49 @@ void *threadfunc(void *vargp) {
 			// 해당 플레이어에게 배정된 게임 방 번호도 초기화
 			np->room_index[cur_client_num] = -1;
 		}
+
+		gettimeofday(&t2, NULL);
+
+		if (cur_client_num == 0) {
+			if (file_index == 1000) {
+				double min, avg, max, sum;
+				min = check[0];
+				sum = 0;
+				max = check[0];
+
+				for(int i=0; i<1000; i++) {
+
+					if (check[i] < min) {
+						min = check[i];
+					}
+
+					if (check[i] > max) {
+						max = check[i];
+					}
+
+					sum += check[i];
+				}
+
+				avg = sum / 1000;
+
+				char buf_file1[50];
+				sprintf(buf_file1, "min=%lf,max=%lf,avg=%lf\n", min, max, avg);
+
+				write(fd, buf_file1, strlen(buf_file1));
+
+				close(fd);
+			} else {
+				check[file_index] = (t2.tv_sec + (t2.tv_usec * 0.000001)) - (t1.tv_sec + (t1.tv_usec * 0.000001));
+				printf("파일 인덱스 %d %lf %s\n", file_index, check[file_index], buf);
+				char buf_file[200];
+				sprintf(buf_file, "time=%lf %s\n", check[file_index], buf);
+				file_index++;
+
+				write(fd, buf_file, strlen(buf_file));
+			}
+			
+		}
+
 	}
 
 	
