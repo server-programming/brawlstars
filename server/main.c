@@ -12,7 +12,7 @@
 #include <sys/time.h>
 
 #define PORTNUM 12312
-#define MAX_PLAYER 1000
+#define MAX_PLAYER 200
 #define MATCHING_NUM 4
 #define BULLET_NUM 2
 
@@ -157,6 +157,7 @@ void *manage_room(void *vargp) {
 				continue;
 			}	
 		}
+		usleep(10000);
 	}
 
 	printf("방이 꽉 찼음\n");
@@ -278,10 +279,10 @@ void *threadfunc(void *vargp) {
 				if (ready_client_num == MATCHING_NUM) {
 					break;
 				}
-
+				usleep(3000);
 			}
 
-			sleep(1);
+			usleep(3000);
 
 			is_matching = 0;
 
@@ -625,5 +626,3 @@ int main() {
 
 	return 0;
 }
-
-
