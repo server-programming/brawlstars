@@ -114,7 +114,7 @@ void init_game(int sd, int client_num, int selected_skin) {
     // lobby(sd, client_num); // 게임 루프 종료 시 로비 화면으로 돌아감
     clear();
     refresh();
-    napms(1000);
+    napms(30);
 }
 
 
@@ -149,7 +149,7 @@ void draw_game_over_screen() {
     // 'r' 키 입력을 기다림
     int ch;
     while ((ch = getch()) != 'r') {
-        // 'r' 키가 아닌 다른 키 입력은 무시
+        napms(30);
     }
 }
 
@@ -180,5 +180,6 @@ void draw_winner_screen() {
 
 	int ch;
 	while ((ch = getch()) != 'r') {
+	    napms(30);
 	}
 }
