@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <float.h>
 #include <unistd.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -192,7 +193,11 @@ void *threadfunc(void *vargp) {
 	// 클라이언트가 대기열에 있었는지 확인하기 위한 변수
 	int is_matching = 0;
 	int ready_index;
+	
 
+	int recorded_cnt = 0;
+	double min = DBL_MAX, max = DBL_MIN, sum = 0.0, avg = 0.0; // 초기값 설정
+								   //
 	if (cur_client_num == 0) {
 		fd = open("log.txt", O_CREAT | O_WRONLY | O_APPEND, 0644);
 	}
@@ -416,47 +421,45 @@ void *threadfunc(void *vargp) {
 		}
 
 		gettimeofday(&t2, NULL);
-
+		
 		if (cur_client_num == 0) {
-			if (file_index == 1000) {
-				double min, avg, max, sum;
-				min = check[0];
-				sum = 0;
-				max = check[0];
+    			if (file_index == 1000) {
+        			// 마지막 처리를 위해 파일에 기록
+        			avg = sum / recorded_cnt;
 
-				for(int i=0; i<1000; i++) {
+        			char buf_file1[50];
+        			sprintf(buf_file1, "min=%lf,max=%lf,avg=%lf\n", min, max, avg);
 
-					if (check[i] < min) {
-						min = check[i];
-					}
+        			write(fd, buf_file1, strlen(buf_file1));
 
-					if (check[i] > max) {
-						max = check[i];
-					}
-
-					sum += check[i];
-				}
-
-				avg = sum / 1000;
-
-				char buf_file1[50];
-				sprintf(buf_file1, "min=%lf,max=%lf,avg=%lf\n", min, max, avg);
-
-				write(fd, buf_file1, strlen(buf_file1));
-
-				close(fd);
+        			close(fd);
 			} else {
-				check[file_index] = (t2.tv_sec + (t2.tv_usec * 0.000001)) - (t1.tv_sec + (t1.tv_usec * 0.000001));
-				printf("파일 인덱스 %d %lf %s\n", file_index, check[file_index], buf);
-				char buf_file[200];
-				sprintf(buf_file, "time=%lf %s\n", check[file_index], buf);
-				file_index++;
+        			// 새 데이터를 기록
+        			double current_time = (t2.tv_sec + (t2.tv_usec * 0.000001)) - (t1.tv_sec + (t1.tv_usec * 0.000001));
+        			check[file_index] = current_time;
+        			file_index++;
 
-				write(fd, buf_file, strlen(buf_file));
-			}
-			
+        			// 실시간 업데이트
+        			if (current_time < min) {
+            				min = current_time;
+        			}
+        			if (current_time > max) {
+            				max = current_time;
+        			}
+        			sum += current_time;
+        			recorded_cnt++;
+
+        			avg = sum / recorded_cnt;
+
+        			// 결과 출력
+        			printf("파일 인덱스 %d %lf %s\n", file_index, current_time, buf);
+        			char buf_file[200];
+        			sprintf(buf_file, "time=%lf, min=%lf, max=%lf, avg=%lf\n", current_time, min, max, avg);
+
+        			write(fd, buf_file, strlen(buf_file));
+				fsync(fd);
+    			}
 		}
-
 	}
 
 	
