@@ -66,6 +66,8 @@ typedef struct {
 	int player_num;
 } room_info;
 
+pthread_mutex_t m_lock;
+
 // 모든 클라이언트들의 정보를 담은 배열에 접근할 수 있는 포인터 선언
 network_player *np;
 
@@ -129,6 +131,8 @@ void *manage_room(void *vargp) {
 					room[i].is_empty = 0;
 					room[i].player_num = MATCHING_NUM;
 
+					pthread_mutex_lock(&m_lock);
+
 					// 해당 방에 대기 중이었던 유저들의 정보를 저장한다
 					// ready_client에 인덱스로 접근하면 현재 대기 중인 클라이언트의 고유 번호를 확인할 수 있다
 					for (int j = 0; j < MATCHING_NUM; j++) {
@@ -146,6 +150,7 @@ void *manage_room(void *vargp) {
 					// 대기열 정보를 초기화하기 전에 우선 대기중인 클라이언트들이 무한반복에서 빠져나와야 한다
 					ready_client_num = 0;
 
+					pthread_mutex_lock(&m_lock);
 					break;
 				}
 			}
@@ -261,11 +266,16 @@ void *threadfunc(void *vargp) {
 			for(int i=0; i<MATCHING_NUM; i++) {
 				if (ready_client[i] == -1) {
 					
+					pthread_mutex_lock(&m_lock);
+
 					printf("대기열 %d번 위치에 클라이언트 %d의 정보 저장\n", i, cur_client_num);
 					// 대기열에 클라이언트 고유 번호 저장
 					ready_client[i] = cur_client_num;
 					ready_client_num += 1;
 					ready_index = i;
+
+					pthread_mutex_unlock(&m_lock);
+
 					break;
 				}
 			}
@@ -299,10 +309,16 @@ void *threadfunc(void *vargp) {
 				}
 
 			} else {
+
+				pthread_mutex_lock(&m_lock);
+
 				// 클라이언트가 매칭 중에 연결을 취소한 경우
 				ready_client[ready_index] = -1;
 				ready_client_num -= 1;
 				printf("매칭 취소 현재 대기 중인 클라이언트의 수 %d\n", ready_client_num);
+				
+				pthread_mutex_unlock(&m_lock);
+
 				break;
 			}
 		}
@@ -391,7 +407,12 @@ void *threadfunc(void *vargp) {
 					room[np->room_index[cur_client_num]].client_id[i] = -1;
 					
 					// 게임 방에서 플레이 중인 유저 수도 감소시킨다
+					
+					pthread_mutex_lock(&m_lock);
+
 					room[np->room_index[cur_client_num]].player_num -= 1;
+
+					pthread_mutex_unlock(&m_lock);
 
 					// 플레이어 정보도 초기화한다
 					np->players[cur_client_num].x = -1;
@@ -467,14 +488,20 @@ void *threadfunc(void *vargp) {
 	// 클라이언트가 매칭 도중 오프라인 상태가 되었다면
 	if (is_matching) {
 		ready_client[ready_index] = -1;
+
+		pthread_mutex_lock(&m_lock);
 		ready_client_num -= 1;
+		pthread_mutex_unlock(&m_lock);
 		printf("매칭 취소 현재 대기 중인 클라이언트의 수 %d\n", ready_client_num);
 		is_matching = 0;
 	}
 
 	// 클라이언트가 동접자 수에 포함됐었다면 동접자 수를 줄이고, 그렇지 않다면 동접자 수를 그대로 유지한다
 	if (access_to_lobby != 1) {
+
+		pthread_mutex_lock(&m_lock);
 		cur_player -= 1;
+		pthread_mutex_unlock(&m_lock);
 	}
 
 	// 클라이언트가 게임 중에 접속을 끊었다면 해당 게임 방의 플레이어 정보를 초기화한다
@@ -499,7 +526,9 @@ void *threadfunc(void *vargp) {
 	if (room[np->room_index[cur_client_num]].player_num == 0) {
 		printf("클라이언트 %d가 %d번 방에서 마지막으로 나감\n", cur_client_num, np->room_index[cur_client_num]);
 
+		pthread_mutex_lock(&m_lock);
 		room[np->room_index[cur_client_num]].is_empty = 1;
+		pthread_mutex_unlock(&m_lock);
 
 	}
 
@@ -524,6 +553,8 @@ int main() {
 	pthread_t room_manager;
 	int temp_ns;
 	int ns_accept;
+
+	pthread_mutex_init(&m_lock, NULL);
 	
 	// 서버의 소켓 준비 코드
 	network nt;
@@ -590,9 +621,11 @@ int main() {
 
 		for(int i=0; i<MAX_PLAYER; i++) {
 			if (np->ns[i] == 0) {
+				pthread_mutex_lock(&m_lock);
 				np->ns[i] = temp_ns;
 				np->cur_client = i;
 				ns_accept = 1;
+				pthread_mutex_unlock(&m_lock);
 				break;
 			}
 		}
