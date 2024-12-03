@@ -5,7 +5,7 @@
 #include <signal.h>
 #include <time.h>
 
-#define NUM_THREADS 20 // 동시 실행할 프로세스 개수
+#define NUM_THREADS 500 // 동시 실행할 프로세스 개수
 
 // 스레드 종료 플래그
 volatile int keep_running = 1;
@@ -99,4 +99,3 @@ int main() {
     printf("모든 프로세스 실행 완료\n");
     return 0;
 }
-
