@@ -150,7 +150,7 @@ void *manage_room(void *vargp) {
 					// 대기열 정보를 초기화하기 전에 우선 대기중인 클라이언트들이 무한반복에서 빠져나와야 한다
 					ready_client_num = 0;
 
-					pthread_mutex_lock(&m_lock);
+					pthread_mutex_unlock(&m_lock);
 					break;
 				}
 			}
@@ -443,7 +443,7 @@ void *threadfunc(void *vargp) {
 		}
 
 		gettimeofday(&t2, NULL);
-		
+		/*	
 		if (cur_client_num == 0) {
     			if (file_index == 1000) {
         			// 마지막 처리를 위해 파일에 기록
@@ -482,6 +482,7 @@ void *threadfunc(void *vargp) {
 				fsync(fd);
     			}
 		}
+		*/
 	}
 
 	
